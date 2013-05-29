@@ -2,9 +2,9 @@
 from copy import copy
 from functools import partial
 
-from webtest import TestApp as BaseTestApp, \
-                    TestRequest as BaseTestRequest, \
-                    TestResponse as BaseTestResponse
+from webtest import (TestApp as BaseTestApp,
+                     TestRequest as BaseTestRequest,
+                     TestResponse as BaseTestResponse)
 from flask import session, get_flashed_messages
 from flask.signals import template_rendered, request_finished
 try:
@@ -17,8 +17,10 @@ except ImportError:
 def store_rendered_templates(store, sender, template, context, **extra):
     store.setdefault('contexts', []).append((template.name, context))
 
+
 def store_flashed_messages(store, sender, message, category, **extra):
     store.setdefault('flashes', []).append((category, message))
+
 
 def store_session(store, sender, response, **extra):
     store['session'] = dict(session)
@@ -43,8 +45,8 @@ class TestResponse(BaseTestResponse):
     def _make_contexts_assertions(self):
         assert self.contexts, 'No templates used to render the response.'
         assert len(self.contexts) == 1, \
-               ('More than one template used to render the response. '
-                'Use `contexts` attribute to access their names and contexts.')
+            ('More than one template used to render the response. '
+             'Use `contexts` attribute to access their names and contexts.')
 
     @property
     def context(self):
@@ -79,7 +81,7 @@ class TestApp(BaseTestApp):
             # in `store`
             flashes_processor = get_context_processor(store)
             self.app.template_context_processors[None].append(flashes_processor)
-        
+
         try:
             response = super(TestApp, self).do_request(*args, **kwargs)
         finally:
