@@ -10,7 +10,8 @@ setup(
     description='WebTest integration for Flask.',
     py_modules=['flask_webtest'],
     install_requires=[
-        'Flask',
+        'Flask>=0.6',
+        'WebTest',
         'blinker',
     ],
 )

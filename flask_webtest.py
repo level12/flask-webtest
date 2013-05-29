@@ -2,58 +2,99 @@
 from copy import copy
 from functools import partial
 
-from flask import template_rendered
-from webtest import TestApp
+from webtest import TestApp as BaseTestApp, \
+                    TestRequest as BaseTestRequest, \
+                    TestResponse as BaseTestResponse
+from flask import session, get_flashed_messages
+from flask.signals import template_rendered, request_finished
+try:
+    # Available starting with Flask 0.10
+    from flask.signals import message_flashed
+except ImportError:
+    message_flashed = None
 
 
-class ContextList(list):
-    def __getitem__(self, key):
-        if isinstance(key, basestring):
-            for subcontext in self:
-                if key in subcontext:
-                    return subcontext[key]
-            raise KeyError(key)
-        else:
-            return super(ContextList, self).__getitem__(key)
+def store_rendered_templates(store, sender, template, context, **extra):
+    store.setdefault('contexts', []).append((template.name, context))
 
-    def __contains__(self, key):
-        try:
-            value = self[key]
-        except KeyError:
-            return False
-        return True
+def store_flashed_messages(store, sender, message, category, **extra):
+    store.setdefault('flashes', []).append((category, message))
+
+def store_session(store, sender, response, **extra):
+    store['session'] = dict(session)
 
 
-def store_rendered_templates(store, app, template, context):
-    store.setdefault('templates', []).append(template)
-    store.setdefault('contexts', ContextList()).append(copy(context))
+def get_context_processor(store):
+    """Returns context processor that injects modified version of
+    `get_flashed_messages` which stores consumed messages in `store`.
+    """
+    def context_processor():
+        def wrapper(*args, **kwargs):
+            # `get_flashed_messages` removes messages from session, so
+            # we store them before calling it
+            flashes_to_be_consumed = copy(session.get('_flashes', []))
+            store.setdefault('flashes', []).extend(flashes_to_be_consumed)
+            return get_flashed_messages(*args, **kwargs)
+        return {'get_flashed_messages': wrapper}
+    return context_processor
 
 
-class TestClient(TestApp):
+class TestResponse(BaseTestResponse):
+    def _make_contexts_assertions(self):
+        assert self.contexts, 'No templates used to render the response.'
+        assert len(self.contexts) == 1, \
+               ('More than one template used to render the response. '
+                'Use `contexts` attribute to access their names and contexts.')
+
+    @property
+    def context(self):
+        self._make_contexts_assertions()
+        return self.contexts.values()[0]
+
+    @property
+    def template(self):
+        self._make_contexts_assertions()
+        return self.contexts.keys()[0]
+
+
+class TestRequest(BaseTestRequest):
+    ResponseClass = TestResponse
+
+
+class TestApp(BaseTestApp):
+    RequestClass = TestRequest
+
     def do_request(self, *args, **kwargs):
-        data = {}
-        on_template_render = partial(store_rendered_templates, data)
+        store = {}
+        on_template_render = partial(store_rendered_templates, store)
+        on_request_finish = partial(store_session, store)
 
         template_rendered.connect(on_template_render)
+        request_finished.connect(on_request_finish)
+        if message_flashed:
+            message_flashed.connect(store_flashed_messages)
+        else:
+            # If signal is not available, fall back to using
+            # context processor which stores consumed flash messages
+            # in `store`
+            flashes_processor = get_context_processor(store)
+            self.app.template_context_processors[None].append(flashes_processor)
+        
         try:
-            response = super(TestClient, self).do_request(*args, **kwargs)
+            response = super(TestApp, self).do_request(*args, **kwargs)
         finally:
             template_rendered.disconnect(on_template_render)
-
-        response.context = None
-        contexts = data.get('contexts')
-        if contexts:
-            if len(contexts) == 1:
-                response.context = contexts[0]
+            request_finished.disconnect(on_request_finish)
+            if message_flashed:
+                message_flashed.disconnect(store_flashed_messages)
             else:
-                response.context = contexts
+                # Remove our context processor
+                self.app.template_context_processors[None].remove(flashes_processor)
+                # Put unconsumed flash messages in `store`
+                unconsumed_flashes = copy(store['session'].get('_flashes', []))
+                store.setdefault('flashes', []).extend(unconsumed_flashes)
 
-        response.template = None
-        response.templates = []
-        templates = data.get('templates')
-        if templates:
-            response.templates = templates
-            if len(templates) == 1:
-                response.template = templates[0]
-
+        response.session = store.get('session', {})
+        response.flashes = store.get('flashes', [])
+        response.contexts = dict(store.get('contexts', []))
         return response
