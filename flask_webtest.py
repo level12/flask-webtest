@@ -92,9 +92,6 @@ class TestApp(BaseTestApp):
             else:
                 # Remove our context processor
                 self.app.template_context_processors[None].remove(flashes_processor)
-                # Put unconsumed flash messages in `store`
-                unconsumed_flashes = copy(store['session'].get('_flashes', []))
-                store.setdefault('flashes', []).extend(unconsumed_flashes)
 
         response.session = store.get('session', {})
         response.flashes = store.get('flashes', [])

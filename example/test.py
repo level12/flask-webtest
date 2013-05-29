@@ -21,7 +21,7 @@ class ExampleTest(TestCase):
     def test_two_templates_and_flash_messages(self):
         r = self.w.get('/').form.submit()
         self.assertEqual(len(r.contexts), 2)
-        self.assertEqual(len(r.flashes), 2)
+        self.assertEqual(len(r.flashes), 1)
 
         with self.assertRaises(AssertionError):
             r.context  # Because there are more than one used templates
