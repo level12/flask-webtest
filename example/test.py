@@ -17,6 +17,7 @@ class ExampleTest(TestCase):
 
         self.assertEqual(r.context['text'], 'Hello!')
         self.assertEqual(r.template, 'template.html')
+        self.assertNotIn('qwerty', r.session)
 
     def test_two_templates_and_flash_messages(self):
         r = self.w.get('/').form.submit()
