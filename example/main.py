@@ -3,6 +3,7 @@ from flask import Flask, request, flash, render_template
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '123'
+app.config['DEBUG'] = '123'
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -18,4 +19,4 @@ def home():
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)

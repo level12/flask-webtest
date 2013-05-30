@@ -8,7 +8,7 @@ from main import app
 class ExampleTest(TestCase):
     def setUp(self):
         self.app = app
-        self.w = TestApp(self.app)
+        self.w = TestApp(self.app)  # Or even self.app.wsgi_app
 
     def test_single_template(self):
         r = self.w.get('/')

@@ -5,6 +5,7 @@ setup(
     version='0.0.1',
     url='https://github.com/aromanovich/flask-webtest',
     license='BSD',
+    description = 'Utilities for testing Flask applications with WebTest.',
     author='Anton Romanovich',
     author_email='anthony.romanovich@gmail.com',
     description='WebTest integration for Flask.',
@@ -13,5 +14,10 @@ setup(
         'Flask>=0.6',
         'WebTest',
         'blinker',
+    ],
+    classifiers=[
+        'Topic :: Software Development :: Testing',
+        'Environment :: Web Environment'
+        'Intended Audience :: Developers',
     ],
 )
