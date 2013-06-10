@@ -3,7 +3,7 @@ Flask-WebTest
 
 Flask-WebTest provides a set of utilities to ease testing Flask applications with WebTest.
 
-`flask.ext.webtest.TestApp` extends `webtest.TestApp` by adding few useful fields to response:
+``flask.ext.webtest.TestApp`` extends ``webtest.TestApp`` by adding few useful fields to response:
 
 * ``response.templates`` ― dictionary containing information about what templates were used to build the response and what their contexts were. The keys are template names and the values are template contexts.  
   If only one template was used, it's name and context can be accessed through ``response.template`` and ``response.context``.
