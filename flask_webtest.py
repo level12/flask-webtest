@@ -2,16 +2,56 @@
 from copy import copy
 from functools import partial
 
+from werkzeug.local import LocalStack
+from flask import g, session, get_flashed_messages
+from flask.signals import template_rendered, request_started, request_finished
+from flask.ext.sqlalchemy import connection_stack
 from webtest import (TestApp as BaseTestApp,
                      TestRequest as BaseTestRequest,
                      TestResponse as BaseTestResponse)
-from flask import g, session, get_flashed_messages
-from flask.signals import template_rendered, request_started, request_finished
+
 try:
     # Available starting with Flask 0.10
     from flask.signals import message_flashed
 except ImportError:
     message_flashed = None
+
+
+_sqlalchemy_scope_stack = LocalStack()
+
+
+class SQLAlchemyScope(object):
+    def __init__(self, db, original_scopefunc=connection_stack.__ident_func__):
+        self.db = db
+        self.original_scopefunc = original_scopefunc
+
+    def push(self):
+        _sqlalchemy_scope_stack.push(self)
+
+    def pop(self):
+        self.db.session.remove()
+        rv = _sqlalchemy_scope_stack.pop()
+        assert rv is self, 'Popped wrong SQLAlchemy scope.  (%r instead of %r)' \
+            % (rv, self)
+
+    def scopefunc(self):
+        return (self.original_scopefunc(), id(self))
+    
+    def __enter__(self):
+        self.push()
+        return self
+
+    def __exit__(self, exc_type, exc_value, tb):
+        self.pop()
+
+
+def scopefunc(original_scopefunc=connection_stack.__ident_func__):
+    sqlalchemy_scope = _sqlalchemy_scope_stack.top
+    if sqlalchemy_scope:
+        rv = _sqlalchemy_scope_stack.top.scopefunc()
+    else:
+        rv = original_scopefunc()
+    return rv
 
 
 def store_rendered_template(app, template, context, **extra):
