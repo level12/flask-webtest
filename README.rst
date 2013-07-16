@@ -69,27 +69,27 @@ Everything looks good, but sometimes strange (at first sight) things happen:
 
 * Uncommitted changes happen to be used to build the response:
 
-.. code:: python
+  .. code:: python
 
-    user.name = 'Petr'
-    # Note: we did not commit the change to `user`!
-    r = self.w.get('/user/%i/' % user.id)
-    
-    self.assertEqual(r.data, 'Hello, Anton!')
-    # AssertionError: 'Hello, Petr!' != 'Hello, Anton!'
+      user.name = 'Petr'
+      # Note: we did not commit the change to `user`!
+      r = self.w.get('/user/%i/' % user.id)
+        
+      self.assertEqual(r.data, 'Hello, Anton!')
+      # AssertionError: 'Hello, Petr!' != 'Hello, Anton!'
 
 * Model disappear from the Session after request:
 
-.. code:: python
+  .. code:: python
 
-    r = self.w.post('/user/%i/preview/' % user.id, data={
-        'greeting': 'Hi, %s.',    
-    })
-    self.assertEqual(r.data, 'Hi, Anton.')
+      r = self.w.post('/user/%i/preview/' % user.id, data={
+          'greeting': 'Hi, %s.',    
+      })
+      self.assertEqual(r.data, 'Hi, Anton.')
 
-    db.session.refresh(user)
-    # InvalidRequestError: Instance '<User at 0xa8c0e8c>' is 
-    # not persistent within this Session
+      db.session.refresh(user)
+      # InvalidRequestError: Instance '<User at 0xa8c0e8c>' is 
+      # not persistent within this Session
 
 * And so on.
 
@@ -105,8 +105,8 @@ By default, Flask-SQLAlchemy defines ``scopefunc`` to return current thread's id
 In production, normally:
 
 1. Only one request being handled at a time within each thread;
-2. The Session being opened the first time you call ``db.session``;
-3. Flask-SQLAlchemy closes the Session for you after request (more exactly,
+2. The Session being opened the first time ``db.session`` is called;
+3. Flask-SQLAlchemy closes the Session after request (more exactly,
    on application teardown).
 
 Providing that, the application uses a new separate Session during each request.
@@ -115,8 +115,8 @@ The Session is opened at the start and closed at the end of the request.
 In the current tests' implementation:
 
 1. Every request being handled in the same thread, hence using the same SQLAlchemy Session;
-2. The Session being opened the first time you call ``db.session``, and it happens
-   when you load the fixtures;
+2. The Session being opened the first time ``db.session`` is called, and it happens
+   when the test loads fixtures;
 3. Flask-SQLAlchemy closes the Session on application teardown. It happens
    only in ``tearDown`` method ― when the last context leaves the
    application contexts' stack.
@@ -129,49 +129,48 @@ Flask-WebTest provides means to easily manage SQLAlchemy scopes:
 ``SQLAlchemyScope`` that you can enter and exit and custom ``scopefunc``
 that has to be used during testing.
 
-How do we make use of them?
+How to make use of them:
 
 1. Replace default ``scopefunc`` with ``SQLAlchemyScope``-aware ``scopefunc`` from Flask-WebTest:
+    
+   .. code:: python
 
-.. code:: python
-
-    from flask.ext.webtest import scopefunc
-    
-    def make_db(app):
-        session_options = {}
-        if app.testing:
-            session_options['scopefunc'] = scopefunc
-        db = SQLAlchemy(app, session_options=session_options)
-        return db
-    
-    
-    app = Flask(__name__)
-    ...
-    db = make_db(app)
+      from flask.ext.webtest import scopefunc
+        
+      def make_db(app):
+          session_options = {}
+          if app.testing:
+              session_options['scopefunc'] = scopefunc
+          db = SQLAlchemy(app, session_options=session_options)
+          return db
+        
+        
+      app = Flask(__name__)
+      ...
+      db = make_db(app)
 
 2. Whenever you want a code to use a new SQLAlchemy Session, execute it within a new SQLAlchemy scope:
 
-.. code:: python
+   .. code:: python
 
-    user = User(name='Anton')
-    db.session.add(user)
-    db.session.commit()
-    print user in db.session  # True
-    
-    with SQLAlchemyScope(db):
-        # Brand new session!
-        print user in db.session  # False 
+      user = User(name='Anton')
+      db.session.add(user)
+      db.session.commit()
+      print user in db.session  # True
+        
+      with SQLAlchemyScope(db):
+          # Brand new session!
+          print user in db.session  # False 
+   or
+   
+   .. code:: python
 
-or
-
-.. code:: python
-
-    scope = SQLAlchemyScope(db):
-    scope.push()
-    try:
-    ...    
-    finally:
-        scope.pop()
+      scope = SQLAlchemyScope(db)
+      scope.push()
+      try:
+          ...    
+      finally:
+          scope.pop()
 
 It makes sense to use a fresh SQLAlchemyScope for every request.
 
@@ -180,7 +179,7 @@ performs tasks synchronously during tests ― it's a great idea
 to run them within separate scopes too.
 
 And you must be aware that models bound to the Session and
-in general you can't use objects whose Session was removed:
+in general you can't use object which Session was removed:
 
 .. code:: python
 
