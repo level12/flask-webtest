@@ -232,5 +232,4 @@ Usage
             self.assertFalse(r.flashes)
             self.assertEqual(r.context['text'], 'Hello!')
             self.assertEqual(r.template, 'template.html')
-            self.assertFalse(r.flashes)
             self.assertNotIn('user_id', r.session)

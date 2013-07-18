@@ -1,14 +1,22 @@
 # coding: utf-8
+"""
+ADasd
+=====
+"""
 from copy import copy
 from functools import partial
 
 from werkzeug.local import LocalStack
 from flask import g, session, get_flashed_messages
 from flask.signals import template_rendered, request_started, request_finished
-from flask.ext.sqlalchemy import connection_stack
 from webtest import (TestApp as BaseTestApp,
                      TestRequest as BaseTestRequest,
                      TestResponse as BaseTestResponse)
+
+try:
+    from flask.ext.sqlalchemy import connection_stack
+except ImportError:
+    connection_stack = None
 
 try:
     # Available starting with Flask 0.10
@@ -17,25 +25,32 @@ except ImportError:
     message_flashed = None
 
 
-_sqlalchemy_scope_stack = LocalStack()
+_session_scope_stack = LocalStack()
 
 
-class SQLAlchemyScope(object):
-    def __init__(self, db, original_scopefunc=connection_stack.__ident_func__):
+class SessionScope(object):
+    """Session scope, being pushed, changes the value of
+    :func:`.scopefunc` and, as a result, calls to `db.session`
+    are proxied to the new underlying session.
+    When popped, removes the current session and swap the value of
+    :func:`.scopefunc` to the one that was before.
+
+    :param db: :class:`flask.ext.sqlalchemy.SQLAlchemy` instance
+    """
+
+    def __init__(self, db):
         self.db = db
-        self.original_scopefunc = original_scopefunc
 
     def push(self):
-        _sqlalchemy_scope_stack.push(self)
+        """Pushes the session scope."""
+        _session_scope_stack.push(self)
 
     def pop(self):
+        """Removes the current session and pops the session scope."""
         self.db.session.remove()
-        rv = _sqlalchemy_scope_stack.pop()
-        assert rv is self, 'Popped wrong SQLAlchemy scope.  (%r instead of %r)' \
+        rv = _session_scope_stack.pop()
+        assert rv is self, 'Popped wrong session scope.  (%r instead of %r)' \
             % (rv, self)
-
-    def scopefunc(self):
-        return (self.original_scopefunc(), id(self))
     
     def __enter__(self):
         self.push()
@@ -45,13 +60,23 @@ class SQLAlchemyScope(object):
         self.pop()
 
 
-def scopefunc(original_scopefunc=connection_stack.__ident_func__):
-    sqlalchemy_scope = _sqlalchemy_scope_stack.top
-    if sqlalchemy_scope:
-        rv = _sqlalchemy_scope_stack.top.scopefunc()
-    else:
+def get_scopefunc(original_scopefunc=None):
+    """Returns :func:`.SessionScope`-aware `scopefunc` that has to be used
+    during testing.
+    """
+
+    if original_scopefunc is None:
+        assert connection_stack, 'Is Flask-SQLAlchemy installed?'
+        original_scopefunc = connection_stack.__ident_func__
+
+    def scopefunc():
         rv = original_scopefunc()
-    return rv
+        sqlalchemy_scope = _session_scope_stack.top
+        if sqlalchemy_scope:
+            rv = (rv, id(sqlalchemy_scope))
+        return rv
+
+    return scopefunc
 
 
 def store_rendered_template(app, template, context, **extra):
@@ -83,6 +108,8 @@ def tear_down(store, app, response, *args, **extra):
 
 
 class TestResponse(BaseTestResponse):
+    contexts = {}
+
     def _make_contexts_assertions(self):
         assert self.contexts, 'No templates used to render the response.'
         assert len(self.contexts) == 1, \
@@ -105,7 +132,43 @@ class TestRequest(BaseTestRequest):
 
 
 class TestApp(BaseTestApp):
+    """Extends :class:`webtest.TestApp` by adding few fields to responses:
+
+    .. attribute:: templates
+        
+        Dictionary containing information about what templates were used to
+        build the response and what their contexts were.
+        The keys are template names and the values are template contexts.
+    
+    .. attribute:: flashes
+
+        List of tuples (category, message) containing messages that were
+        flashed during request.
+
+        Note: Fully supported only starting with Flask 0.10. If you use
+        previous version, `flashes` will contain only those messages that
+        were consumed by :func:`flask.get_flashed_messages` template calls.
+    
+    .. attribute:: session
+
+        Dictionary containing session data.
+    
+    If exactly one template was used to render the response, it's name and context
+    can be accessed using `response.template` and `response.context` properties.
+
+    :param db: :class:`flask.ext.sqlalchemy.SQLAlchemy` instance
+    :param use_session_scopes: if specified, application performs each request
+                               within it's own separate session scope
+    """
     RequestClass = TestRequest
+
+    def __init__(self, db=None, use_session_scopes=False, *args, **kwargs):
+        if use_session_scopes:
+            assert db, ('`db` (instance of `flask.ext.sqlalchemy.SQLAlchemy`) '
+                        'must be passed to use session scopes.')
+        self.db = db
+        self.use_session_scopes = use_session_scopes
+        super(TestApp, self).__init__(*args, **kwargs)
 
     def do_request(self, *args, **kwargs):
         store = {}
@@ -117,9 +180,14 @@ class TestApp(BaseTestApp):
         if message_flashed:
             message_flashed.connect(store_flashed_message)
 
+        if self.use_session_scopes:
+            scope = SessionScope(self.db)
+            scope.push()
         try:
             response = super(TestApp, self).do_request(*args, **kwargs)
         finally:
+            if self.use_session_scopes:
+                scope.pop()
             template_rendered.disconnect(store_rendered_template)
             request_finished.disconnect(tear_down_)
             request_started.disconnect(set_up)

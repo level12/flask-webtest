@@ -1,0 +1,256 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>flask.ext.webtest &mdash; Flask-WebTest 0.0.3 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/flasky.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.0.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="Flask-WebTest 0.0.3 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+  
+  
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for flask.ext.webtest</h1><div class="highlight"><pre>
+<span class="c"># coding: utf-8</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">ADasd</span>
+<span class="sd">=====</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">copy</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+
+<span class="kn">from</span> <span class="nn">werkzeug.local</span> <span class="kn">import</span> <span class="n">LocalStack</span>
+<span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">g</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">get_flashed_messages</span>
+<span class="kn">from</span> <span class="nn">flask.signals</span> <span class="kn">import</span> <span class="n">template_rendered</span><span class="p">,</span> <span class="n">request_started</span><span class="p">,</span> <span class="n">request_finished</span>
+<span class="kn">from</span> <span class="nn">webtest</span> <span class="kn">import</span> <span class="p">(</span><span class="n">TestApp</span> <span class="k">as</span> <span class="n">BaseTestApp</span><span class="p">,</span>
+                     <span class="n">TestRequest</span> <span class="k">as</span> <span class="n">BaseTestRequest</span><span class="p">,</span>
+                     <span class="n">TestResponse</span> <span class="k">as</span> <span class="n">BaseTestResponse</span><span class="p">)</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">flask.ext.sqlalchemy</span> <span class="kn">import</span> <span class="n">connection_stack</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">connection_stack</span> <span class="o">=</span> <span class="bp">None</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="c"># Available starting with Flask 0.10</span>
+    <span class="kn">from</span> <span class="nn">flask.signals</span> <span class="kn">import</span> <span class="n">message_flashed</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">message_flashed</span> <span class="o">=</span> <span class="bp">None</span>
+
+
+<span class="n">_session_scope_stack</span> <span class="o">=</span> <span class="n">LocalStack</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="SessionScope"><a class="viewcode-back" href="../../../index.html#flask.ext.webtest.SessionScope">[docs]</a><span class="k">class</span> <span class="nc">SessionScope</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Session scope, being pushed, changes the value of</span>
+<span class="sd">    :func:`.scopefunc` and, as a result, calls to `db.session`</span>
+<span class="sd">    are proxied to the new underlying Session.</span>
+<span class="sd">    When popped, removes the current session and swap the value of</span>
+<span class="sd">    :func:`.scopefunc` to the one that was before.</span>
+
+<span class="sd">    :param db: :class:`flask.ext.sqlalchemy.SQLAlchemy` instance</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db</span> <span class="o">=</span> <span class="n">db</span>
+
+<div class="viewcode-block" id="SessionScope.push"><a class="viewcode-back" href="../../../index.html#flask.ext.webtest.SessionScope.push">[docs]</a>    <span class="k">def</span> <span class="nf">push</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Pushes the session scope.&quot;&quot;&quot;</span>
+        <span class="n">_session_scope_stack</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="SessionScope.pop"><a class="viewcode-back" href="../../../index.html#flask.ext.webtest.SessionScope.pop">[docs]</a>    <span class="k">def</span> <span class="nf">pop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Removes the current session and pops the session scope.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span>
+        <span class="n">rv</span> <span class="o">=</span> <span class="n">_session_scope_stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+        <span class="k">assert</span> <span class="n">rv</span> <span class="ow">is</span> <span class="bp">self</span><span class="p">,</span> <span class="s">&#39;Popped wrong Session scope.  (</span><span class="si">%r</span><span class="s"> instead of </span><span class="si">%r</span><span class="s">)&#39;</span> \
+            <span class="o">%</span> <span class="p">(</span><span class="n">rv</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+    </div>
+    <span class="k">def</span> <span class="nf">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">push</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_value</span><span class="p">,</span> <span class="n">tb</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="get_scopefunc"><a class="viewcode-back" href="../../../index.html#flask.ext.webtest.get_scopefunc">[docs]</a><span class="k">def</span> <span class="nf">get_scopefunc</span><span class="p">(</span><span class="n">original_scopefunc</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns :func:`.SessionScope`-aware `scopefunc` that has to be used</span>
+<span class="sd">    during testing.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">original_scopefunc</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">connection_stack</span><span class="p">,</span> <span class="s">&#39;Is Flask-SQLAlchemy installed?&#39;</span>
+        <span class="n">original_scopefunc</span> <span class="o">=</span> <span class="n">connection_stack</span><span class="o">.</span><span class="n">__ident_func__</span>
+
+    <span class="k">def</span> <span class="nf">scopefunc</span><span class="p">():</span>
+        <span class="n">rv</span> <span class="o">=</span> <span class="n">original_scopefunc</span><span class="p">()</span>
+        <span class="n">sqlalchemy_scope</span> <span class="o">=</span> <span class="n">_session_scope_stack</span><span class="o">.</span><span class="n">top</span>
+        <span class="k">if</span> <span class="n">sqlalchemy_scope</span><span class="p">:</span>
+            <span class="n">rv</span> <span class="o">=</span> <span class="p">(</span><span class="n">rv</span><span class="p">,</span> <span class="nb">id</span><span class="p">(</span><span class="n">sqlalchemy_scope</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">rv</span>
+
+    <span class="k">return</span> <span class="n">scopefunc</span>
+
+</div>
+<span class="k">def</span> <span class="nf">store_rendered_template</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">template</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="o">**</span><span class="n">extra</span><span class="p">):</span>
+    <span class="n">g</span><span class="o">.</span><span class="n">_flask_webtest</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s">&#39;contexts&#39;</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">template</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">context</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">store_flashed_message</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">category</span><span class="p">,</span> <span class="o">**</span><span class="n">extra</span><span class="p">):</span>
+    <span class="n">g</span><span class="o">.</span><span class="n">_flask_webtest</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s">&#39;flashes&#39;</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">category</span><span class="p">,</span> <span class="n">message</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">set_up</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">extra</span><span class="p">):</span>
+    <span class="n">g</span><span class="o">.</span><span class="n">_flask_webtest</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">message_flashed</span><span class="p">:</span>
+        <span class="k">def</span> <span class="nf">_get_flashed_messages</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="c"># `get_flashed_messages` removes messages from session,</span>
+            <span class="c"># so we store them in `g._flask_webtest`</span>
+            <span class="n">flashes_to_be_consumed</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;_flashes&#39;</span><span class="p">,</span> <span class="p">[]))</span>
+            <span class="n">g</span><span class="o">.</span><span class="n">_flask_webtest</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s">&#39;flashes&#39;</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">flashes_to_be_consumed</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">get_flashed_messages</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">app</span><span class="o">.</span><span class="n">jinja_env</span><span class="o">.</span><span class="n">globals</span><span class="p">[</span><span class="s">&#39;get_flashed_messages&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_get_flashed_messages</span>
+
+
+<span class="k">def</span> <span class="nf">tear_down</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">app</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">extra</span><span class="p">):</span>
+    <span class="n">g</span><span class="o">.</span><span class="n">_flask_webtest</span><span class="p">[</span><span class="s">&#39;session&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">session</span><span class="p">)</span>
+    <span class="n">store</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">_flask_webtest</span><span class="p">)</span>
+    <span class="k">del</span> <span class="n">g</span><span class="o">.</span><span class="n">_flask_webtest</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">message_flashed</span><span class="p">:</span>
+        <span class="n">app</span><span class="o">.</span><span class="n">jinja_env</span><span class="o">.</span><span class="n">globals</span><span class="p">[</span><span class="s">&#39;get_flashed_messages&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_flashed_messages</span>
+
+
+<span class="k">class</span> <span class="nc">TestResponse</span><span class="p">(</span><span class="n">BaseTestResponse</span><span class="p">):</span>
+    <span class="n">contexts</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span> <span class="nf">_make_contexts_assertions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">contexts</span><span class="p">,</span> <span class="s">&#39;No templates used to render the response.&#39;</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">contexts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> \
+            <span class="p">(</span><span class="s">&#39;More than one template used to render the response. &#39;</span>
+             <span class="s">&#39;Use `contexts` attribute to access their names and contexts.&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">context</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_make_contexts_assertions</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">contexts</span><span class="o">.</span><span class="n">values</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">template</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_make_contexts_assertions</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">contexts</span><span class="o">.</span><span class="n">keys</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">TestRequest</span><span class="p">(</span><span class="n">BaseTestRequest</span><span class="p">):</span>
+    <span class="n">ResponseClass</span> <span class="o">=</span> <span class="n">TestResponse</span>
+
+
+<div class="viewcode-block" id="TestApp"><a class="viewcode-back" href="../../../index.html#flask.ext.webtest.TestApp">[docs]</a><span class="k">class</span> <span class="nc">TestApp</span><span class="p">(</span><span class="n">BaseTestApp</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Extends :class:`webtest.TestApp` by adding few fields to responses:</span>
+
+<span class="sd">    .. attribute:: templates</span>
+<span class="sd">        </span>
+<span class="sd">        Dictionary containing information about what templates were used to</span>
+<span class="sd">        build the response and what their contexts were.</span>
+<span class="sd">        The keys are template names and the values are template contexts.</span>
+<span class="sd">    </span>
+<span class="sd">    .. attribute:: flashes</span>
+
+<span class="sd">        List of tuples (category, message) containing messages that were</span>
+<span class="sd">        flashed during request.</span>
+
+<span class="sd">        Note: Fully supported only starting with Flask 0.10. If you use</span>
+<span class="sd">        previous version, `flashes` will contain only those messages that</span>
+<span class="sd">        were consumed by :func:`flask.get_flashed_messages` template calls.</span>
+<span class="sd">    </span>
+<span class="sd">    .. attribute:: session</span>
+
+<span class="sd">        Dictionary containing session data.</span>
+<span class="sd">    </span>
+<span class="sd">    If exactly one template was used to render the response, it&#39;s name and context</span>
+<span class="sd">    can be accessed using `response.template` and `response.context` properties.</span>
+
+<span class="sd">    :param db: :class:`flask.ext.sqlalchemy.SQLAlchemy` instance</span>
+<span class="sd">    :param use_session_scopes: if specified, application performs requests</span>
+<span class="sd">                               within separate Session scopes</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">RequestClass</span> <span class="o">=</span> <span class="n">TestRequest</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">use_session_scopes</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">use_session_scopes</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">db</span><span class="p">,</span> <span class="p">(</span><span class="s">&#39;`db` (instance of `flask.ext.sqlalchemy.SQLAlchemy`) &#39;</span>
+                        <span class="s">&#39;must be passed to use session scopes.&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db</span> <span class="o">=</span> <span class="n">db</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_session_scopes</span> <span class="o">=</span> <span class="n">use_session_scopes</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">TestApp</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">do_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">store</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">tear_down_</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">tear_down</span><span class="p">,</span> <span class="n">store</span><span class="p">)</span>
+
+        <span class="n">request_started</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">set_up</span><span class="p">)</span>
+        <span class="n">request_finished</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">tear_down_</span><span class="p">)</span>
+        <span class="n">template_rendered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">store_rendered_template</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">message_flashed</span><span class="p">:</span>
+            <span class="n">message_flashed</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">store_flashed_message</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_session_scopes</span><span class="p">:</span>
+            <span class="n">scope</span> <span class="o">=</span> <span class="n">SessionScope</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="p">)</span>
+            <span class="n">scope</span><span class="o">.</span><span class="n">push</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">TestApp</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">do_request</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_session_scopes</span><span class="p">:</span>
+                <span class="n">scope</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+            <span class="n">template_rendered</span><span class="o">.</span><span class="n">disconnect</span><span class="p">(</span><span class="n">store_rendered_template</span><span class="p">)</span>
+            <span class="n">request_finished</span><span class="o">.</span><span class="n">disconnect</span><span class="p">(</span><span class="n">tear_down_</span><span class="p">)</span>
+            <span class="n">request_started</span><span class="o">.</span><span class="n">disconnect</span><span class="p">(</span><span class="n">set_up</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">message_flashed</span><span class="p">:</span>
+                <span class="n">message_flashed</span><span class="o">.</span><span class="n">disconnect</span><span class="p">(</span><span class="n">store_flashed_message</span><span class="p">)</span>
+
+        <span class="n">response</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;session&#39;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">flashes</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;flashes&#39;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">contexts</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">store</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;contexts&#39;</span><span class="p">,</span> <span class="p">[]))</span>
+        <span class="k">return</span> <span class="n">response</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  
+    <a href="http://github.com/aromanovich/flask-webtest"><img style="position: fixed; top: 0; right: 0; border: 0;"
+    src="http://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub" /></a>
+  
+
+  
+
+  </body>
+</html>
