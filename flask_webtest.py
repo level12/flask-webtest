@@ -47,7 +47,7 @@ class SessionScope(object):
         rv = _session_scope_stack.pop()
         assert rv is self, 'Popped wrong session scope.  (%r instead of %r)' \
             % (rv, self)
-    
+
     def __enter__(self):
         self.push()
         return self
@@ -131,11 +131,11 @@ class TestApp(BaseTestApp):
     """Extends :class:`webtest.TestApp` by adding few fields to responses:
 
     .. attribute:: templates
-        
+
         Dictionary containing information about what templates were used to
         build the response and what their contexts were.
         The keys are template names and the values are template contexts.
-    
+
     .. attribute:: flashes
 
         List of tuples (category, message) containing messages that were
@@ -144,11 +144,11 @@ class TestApp(BaseTestApp):
         Note: Fully supported only starting with Flask 0.10. If you use
         previous version, `flashes` will contain only those messages that
         were consumed by :func:`flask.get_flashed_messages` template calls.
-    
+
     .. attribute:: session
 
         Dictionary containing session data.
-    
+
     If exactly one template was used to render the response, it's name and context
     can be accessed using `response.template` and `response.context` properties.
 
