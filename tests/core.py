@@ -2,6 +2,7 @@ from flask import Flask, request, flash, render_template
 
 
 app = Flask(__name__)
+app.testing = True
 app.config['SECRET_KEY'] = '123'
 app.config['DEBUG'] = '123'
 
@@ -16,7 +17,3 @@ def home():
         return response
     else:
         return render_template('template.html', text='Hello!')
-
-
-if __name__ == '__main__':
-    app.run(debug=True)

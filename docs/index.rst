@@ -82,14 +82,12 @@ An approach that comes to mind first may look as follows:
 
     class Test(TestCase):
         def setUp(self):
-            super(TestCase, self).setUp()
             self.w = TestApp(self.app)
             self.app_context = app.app_context()
             self.app_context.push()
             db.create_all()
     
         def tearDown(self):
-            super(TestCase, self).tearDown()
             db.drop_all()
             self.app_context.pop()
     
@@ -98,7 +96,7 @@ An approach that comes to mind first may look as follows:
             db.session.add(user)
             db.session.commit()
             r = self.w.get('/user/%i/' % user.id)
-            self.assertEqual(r.data, 'Hello, Anton!')
+            self.assertEqual(r.body, 'Hello, Anton!')
 
 Everything looks good, but sometimes strange (at first sight) things happen:
 
@@ -110,17 +108,17 @@ Everything looks good, but sometimes strange (at first sight) things happen:
       # Note: we did not commit the change to `user`!
       r = self.w.get('/user/%i/' % user.id)
         
-      self.assertEqual(r.data, 'Hello, Anton!')
+      self.assertEqual(r.body, 'Hello, Anton!')
       # AssertionError: 'Hello, Petr!' != 'Hello, Anton!'
 
 * Model disappear from the session after request:
 
   .. code:: python
 
-      r = self.w.post('/user/%i/preview/' % user.id, data={
+      r = self.w.post('/user/%i/preview/' % user.id, {
           'greeting': 'Hi, %s.',    
       })
-      self.assertEqual(r.data, 'Hi, Anton.')
+      self.assertEqual(r.body, 'Hi, Anton.')
 
       db.session.refresh(user)
       # InvalidRequestError: Instance '<User at 0xa8c0e8c>' is 
@@ -170,15 +168,13 @@ How to make use of them:
     
    .. code:: python
 
-      from flask.ext.webtest import scopefunc
+      from flask.ext.webtest import get_scopefunc
         
       def make_db(app):
           session_options = {}
           if app.testing:
-              session_options['scopefunc'] = scopefunc
-          db = SQLAlchemy(app, session_options=session_options)
-          return db
-        
+              session_options['scopefunc'] = get_scopefunc()
+          return SQLAlchemy(app, session_options=session_options)
         
       app = Flask(__name__)
       ...

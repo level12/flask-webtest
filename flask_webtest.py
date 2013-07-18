@@ -1,8 +1,4 @@
 # coding: utf-8
-"""
-ADasd
-=====
-"""
 from copy import copy
 from functools import partial
 
@@ -158,17 +154,17 @@ class TestApp(BaseTestApp):
 
     :param db: :class:`flask.ext.sqlalchemy.SQLAlchemy` instance
     :param use_session_scopes: if specified, application performs each request
-                               within it's own separate session scope
+                               within it's own separate session scopes
     """
     RequestClass = TestRequest
 
-    def __init__(self, db=None, use_session_scopes=False, *args, **kwargs):
+    def __init__(self, app, db=None, use_session_scopes=False, *args, **kwargs):
         if use_session_scopes:
             assert db, ('`db` (instance of `flask.ext.sqlalchemy.SQLAlchemy`) '
                         'must be passed to use session scopes.')
         self.db = db
         self.use_session_scopes = use_session_scopes
-        super(TestApp, self).__init__(*args, **kwargs)
+        super(TestApp, self).__init__(app, *args, **kwargs)
 
     def do_request(self, *args, **kwargs):
         store = {}
