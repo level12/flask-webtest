@@ -25,7 +25,7 @@ Installation
 Example of usage
 ================
 
-.. code:: python
+::
 
     from unittest import TestCase
     from flask.ext.webtest import TestApp
@@ -56,7 +56,7 @@ Using Flask-WebTest with Flask-SQLAlchemy
 Let's suppose there is a simple application consisting of two views (and `User` model which
 is omitted for brevity):
 
-.. code:: python
+::
 
     app = Flask(__name__)
     db = SQLAlchemy(app)
@@ -78,7 +78,7 @@ is omitted for brevity):
 How can one test it using WebTest?
 An approach that comes to mind first may look as follows:
 
-.. code:: python
+::
 
     class Test(TestCase):
         def setUp(self):
@@ -102,7 +102,7 @@ Everything looks good, but sometimes strange (at first sight) things happen:
 
 * Uncommitted changes happen to be used to build the response:
 
-  .. code:: python
+  ::
 
       user.name = 'Petr'
       # Note: we did not commit the change to `user`!
@@ -113,7 +113,7 @@ Everything looks good, but sometimes strange (at first sight) things happen:
 
 * Model disappear from the session after request:
 
-  .. code:: python
+  ::
 
       r = self.w.post('/user/%i/preview/' % user.id, {
           'greeting': 'Hi, %s.',    
@@ -166,7 +166,7 @@ How to make use of them:
 
 1. Replace default ``scopefunc`` with ``SQLAlchemyScope``-aware ``scopefunc`` from Flask-WebTest:
     
-   .. code:: python
+   ::
 
       from flask.ext.webtest import get_scopefunc
         
@@ -182,7 +182,7 @@ How to make use of them:
 
 2. Whenever you want a piece of code to use a new SQLAlchemy session, execute it within a scope:
 
-   .. code:: python
+   ::
 
       user = User(name='Anton')
       db.session.add(user)
@@ -194,7 +194,7 @@ How to make use of them:
           print user in db.session  # False 
    or
    
-   .. code:: python
+   ::
 
       scope = SessionScope(db)
       scope.push()
@@ -216,7 +216,7 @@ to run them within separate scopes too.
     Be aware that models is bound to the session and
     in general you can't use object which session was removed:
 
-    .. code:: python
+    ::
 
         with SessionScope(db):
             john = User(name='John')
