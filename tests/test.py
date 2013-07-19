@@ -1,4 +1,4 @@
-from unittest import TestCase
+import unittest
 
 import sqlalchemy
 from flask.ext.webtest import TestApp
@@ -14,7 +14,7 @@ else:
     flask_gte_0_10 = True
 
 
-class TestMainFeatures(TestCase):
+class TestMainFeatures(unittest.TestCase):
     def setUp(self):
         self.app = app1
         self.w = TestApp(self.app)
@@ -54,7 +54,7 @@ class TestMainFeatures(TestCase):
             'Some text.')
 
 
-class TestSQLAlchemyFeatures(TestCase):
+class TestSQLAlchemyFeatures(unittest.TestCase):
     def setUp(self):
         self.app = app2
         self.w_without_scoping = TestApp(self.app)
@@ -106,3 +106,14 @@ class TestSQLAlchemyFeatures(TestCase):
         self.assertRaises(
             sqlalchemy.exc.InvalidRequestError,
             lambda: db.session.refresh(user))
+
+
+def suite():
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(TestMainFeatures))
+    suite.addTest(unittest.makeSuite(TestSQLAlchemyFeatures))
+    return suite
+
+
+if __name__ == '__main__':
+    unittest.main(defaultTest='suite')

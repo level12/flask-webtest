@@ -1,14 +1,31 @@
+"""
+Flask-WebTest
+-------------
+
+Provides a set of utilities to ease testing Flask applications with WebTest.
+
+Links
+`````
+
+* `documentation <http://flask-webtest.readthedocs.org/en/latest/>`_
+* `development version
+  <http://github.com/aromanovich/flask-webtest/zipball/master#egg=Flask-WebTest-dev>`_
+"""
 from setuptools import setup
+
 
 setup(
     name='Flask-WebTest',
-    version='0.0.3',
+    version='0.0.4',
     url='https://github.com/aromanovich/flask-webtest',
     license='BSD',
     description = 'Utilities for testing Flask applications with WebTest.',
     author='Anton Romanovich',
     author_email='anthony.romanovich@gmail.com',
     py_modules=['flask_webtest', 'flaskext_compat'],
+    test_suite='tests.test',
+    tests_require=['Flask-SQLAlchemy'],
+    zip_safe=False,
     install_requires=[
         'Flask>=0.6',
         'WebTest',
