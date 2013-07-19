@@ -9,6 +9,9 @@ from webtest import (TestApp as BaseTestApp,
                      TestRequest as BaseTestRequest,
                      TestResponse as BaseTestResponse)
 
+import flaskext_compat
+flaskext_compat.activate()
+
 try:
     from flask.ext.sqlalchemy import connection_stack
 except ImportError:

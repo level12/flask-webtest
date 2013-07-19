@@ -8,7 +8,7 @@ setup(
     description = 'Utilities for testing Flask applications with WebTest.',
     author='Anton Romanovich',
     author_email='anthony.romanovich@gmail.com',
-    py_modules=['flask_webtest'],
+    py_modules=['flask_webtest', 'flaskext_compat'],
     install_requires=[
         'Flask>=0.6',
         'WebTest',
