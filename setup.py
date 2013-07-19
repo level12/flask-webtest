@@ -20,6 +20,7 @@ setup(
     url='https://github.com/aromanovich/flask-webtest',
     license='BSD',
     description = 'Utilities for testing Flask applications with WebTest.',
+    long_description=__doc__,
     author='Anton Romanovich',
     author_email='anthony.romanovich@gmail.com',
     py_modules=['flask_webtest', 'flaskext_compat'],
