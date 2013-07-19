@@ -13,7 +13,7 @@ Flask-WebTest provides a set of utilities to ease testing `Flask`_
 applications with `WebTest`_.
 
 * :class:`.TestApp` extends :class:`webtest.TestApp`'s response by adding fields that
-  provides access to the template contexts, session data and flashed messages.
+  provide access to the template contexts, session data and flashed messages.
 * :class:`SessionScope` and :func:`get_scopefunc` allow to manage SQLAlchemy session
   scoping ―  it's very useful for testing.
 
@@ -47,11 +47,8 @@ Example of usage
             # ...and from session
             self.assertNotIn('user_id', r.session)
 
-Best practices
-==============
-
 Using Flask-WebTest with Flask-SQLAlchemy
------------------------------------------
+=========================================
 
 Let's suppose there is a simple application consisting of two views (and `User` model which
 is omitted for brevity):
@@ -111,7 +108,7 @@ Everything looks good, but sometimes strange (at first sight) things happen:
       self.assertEqual(r.body, 'Hello, Anton!')
       # AssertionError: 'Hello, Petr!' != 'Hello, Anton!'
 
-* Model disappear from the session after request:
+* Model disappears from the session after request:
 
   ::
 
@@ -131,18 +128,17 @@ uses the ORM more extensively.
 
 Why do they appear? Because we use the same SQLAlchemy session in our test and application code.
 
-Any time you call ``db.session``, it passes the call to the session
+Any time you call ``db.session`` it passes the call to the session
 bound to the current scope (which is defined by ``scopefunc``).
 By default, Flask-SQLAlchemy defines ``scopefunc`` to return current thread's identity.
 
-In production, normally:
+In production normally:
 
 1. Only one request being handled at a time within each thread;
-2. The session being opened the first time ``db.session`` is called;
-3. Flask-SQLAlchemy closes the session after request (more exactly,
-   on application teardown).
+2. The session being opened when ``db.session`` is called the first time;
+3. Flask-SQLAlchemy closes the session after request (exactly on application teardown).
 
-Providing that, the application uses a new separate session during each request.
+Providing that, the application uses a separate session during each request.
 The session is opened at the start and closed at the end of the request.
 
 In the current tests' implementation:
@@ -213,8 +209,8 @@ to run them within separate scopes too.
 
 .. note::
 
-    Be aware that models is bound to the session and
-    in general you can't use object which session was removed:
+    Be aware that model is bound to the session and
+    in general you can't use object whose session was removed:
 
     ::
 
@@ -227,7 +223,7 @@ to run them within separate scopes too.
 
         print john in db.session  # False
         
-        # Any call to the expired model requires database hit, so
+        # Any call to an expired model requires database hit, so
         # `print john.name` would cause the following error:
         #
         # DetachedInstanceError: Instance <User at 0x95c756c>
@@ -241,6 +237,56 @@ to run them within separate scopes too.
         
         print john in db.session  # True
         print john.name  # John
+
+Dealing with transaction isolation levels 
+-----------------------------------------
+
+Using a high isolation level may cause some inconveniences during testing.
+Consider this example:
+
+::
+    
+    # Current session represents transaction X
+    user = User.query.filter(User.name == 'Anton').first()
+
+    with SessionScope(db):
+        # Now current session represents transaction Y
+        user_copy = User.query.filter(User.name == 'Anton').first()
+        user_copy.name = 'Petr'
+        db.session.add(user_copy)
+        db.session.commit()
+
+    # Again, current session represents transaction X
+    db.session.refresh(layout)
+    self.assertEqual(layout.name, 'Petr')
+
+The last assertion would fail if ``REPEATABLE READ`` level is being used,
+because transaction ``X`` is isolated from any changes made by transaction ``Y``.
+
+To make changes from ``Y`` visible you need to either commit or rollback ``X``:
+
+::
+    
+    ...
+
+    # Again, current session represents transaction X
+    db.session.rollback()
+    self.assertEqual(layout.name, 'Petr')  # Yay!
+
+
+If it's acceptable, you can just lower the isolation level to ``READ COMMITTED``
+and avoid thinking about this issue:
+
+::
+
+    from flask.ext.sqlalchemy import SQLAlchemy as BaseSQLAlchemy
+
+    class SQLAlchemy(BaseSQLAlchemy):
+        def apply_driver_hacks(self, app, info, options):
+            if 'isolation_level' not in options:
+                options['isolation_level'] = 'READ COMMITTED'
+            return super(SQLAlchemy, self).apply_driver_hacks(
+                app, info, options)
 
 
 API Documentation

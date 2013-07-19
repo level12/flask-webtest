@@ -15,6 +15,6 @@ Installation
 Documentation
 -------------
 
-Documentation available on `Read the Docs`_.
+Documentation is available on `Read the Docs`_.
 
 .. _Read the Docs: https://flask-webtest.readthedocs.org/en/latest/
