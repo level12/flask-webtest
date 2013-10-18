@@ -307,5 +307,5 @@ API related to Flask-SQLAlchemy
 
    .. automethod:: pop
 
-.. _WebTest: http://webtest.readthedocs.org/en/
+.. _WebTest: http://webtest.readthedocs.org/
 .. _Flask: http://flask.pocoo.org/
