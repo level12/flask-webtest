@@ -16,19 +16,19 @@ from setuptools import setup
 
 setup(
     name='Flask-WebTest',
-    version='0.0.4',
+    version='0.0.5',
     url='https://github.com/aromanovich/flask-webtest',
     license='BSD',
     description = 'Utilities for testing Flask applications with WebTest.',
     long_description=__doc__,
     author='Anton Romanovich',
     author_email='anthony.romanovich@gmail.com',
-    py_modules=['flask_webtest', 'flaskext_compat'],
+    py_modules=['flask_webtest'],
     test_suite='tests.test',
     tests_require=['Flask-SQLAlchemy'],
     zip_safe=False,
     install_requires=[
-        'Flask>=0.6',
+        'Flask>=0.8',
         'WebTest',
         'blinker',
     ],
