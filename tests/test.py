@@ -36,7 +36,7 @@ class TestMainFeatures(unittest.TestCase):
             self.assertEqual(len(r.flashes), 2)
             category, message = r.flashes[0]
             self.assertEqual(message, 'You have pressed "Quit"...')
-            
+
             category, message = r.flashes[1]
             self.assertEqual(message, 'Flash message that will never be shown')
         else:
@@ -56,10 +56,10 @@ class TestMainFeatures(unittest.TestCase):
     def test_session_transaction(self):
         r = self.w.get('/whoami/')
         self.assertEqual(r.body, 'nobody')
-        
+
         with self.w.session_transaction() as sess:
             sess['username'] = 'aromanovich'
-        
+
         r = self.w.get('/whoami/')
         self.assertEqual(r.body, 'aromanovich')
 
@@ -85,7 +85,7 @@ class TestSQLAlchemyFeatures(unittest.TestCase):
         self.app_context = self.app.app_context()
         self.app_context.push()
         db.create_all()
-    
+
     def tearDown(self):
         db.drop_all()
         self.app_context.pop()
@@ -100,13 +100,13 @@ class TestSQLAlchemyFeatures(unittest.TestCase):
 
         # Note: we did not commit the change to `user`!
         user.name = 'Petr'
-        
+
         r = self.w_without_scoping.get('/user/%i/' % user.id)
         self.assertEqual(r.body, 'Hello, Petr!')
-        
+
         r = self.w.get('/user/%i/' % user.id)
         self.assertEqual(r.body, 'Hello, Anton!')
-        
+
     def test_2(self):
         user = User(name='Anton')
         db.session.add(user)
@@ -116,13 +116,13 @@ class TestSQLAlchemyFeatures(unittest.TestCase):
         self.assertEqual(r.body, 'Hello, Anton!')
 
         r = self.w.post('/user/%i/preview/' % user.id, {
-            'greeting': 'Hi, %s.',    
+            'greeting': 'Hi, %s.',
         })
         self.assertEqual(r.body, 'Hi, Anton.')
         db.session.refresh(user)
 
         r = self.w_without_scoping.post('/user/%i/preview/' % user.id, {
-            'greeting': 'Hi, %s.',    
+            'greeting': 'Hi, %s.',
         })
         self.assertEqual(r.body, 'Hi, Anton.')
         self.assertRaises(

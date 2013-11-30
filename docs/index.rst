@@ -46,6 +46,28 @@ Example of usage
             # ...and from session
             self.assertNotIn('user_id', r.session)
 
+API Documentation
+=================
+
+This documentation is automatically generated from Flask-WebTest's source code.
+
+.. autoclass:: TestApp
+   
+    .. automethod:: session_transaction
+
+API related to Flask-SQLAlchemy 
+-------------------------------
+.. autofunction:: get_scopefunc
+
+.. autoclass:: SessionScope
+
+   .. automethod:: push
+
+   .. automethod:: pop
+
+.. _WebTest: http://webtest.readthedocs.org/
+.. _Flask: http://flask.pocoo.org/
+
 Using Flask-WebTest with Flask-SQLAlchemy
 =========================================
 
@@ -286,27 +308,3 @@ and avoid thinking about this issue:
                 options['isolation_level'] = 'READ COMMITTED'
             return super(SQLAlchemy, self).apply_driver_hacks(
                 app, info, options)
-
-
-API Documentation
-=================
-
-This documentation is automatically generated from Flask-WebTest's source code.
-
-.. autoclass:: TestApp
-   
-    .. automethod:: session_transaction
-
-
-API related to Flask-SQLAlchemy 
--------------------------------
-.. autofunction:: get_scopefunc
-
-.. autoclass:: SessionScope
-
-   .. automethod:: push
-
-   .. automethod:: pop
-
-.. _WebTest: http://webtest.readthedocs.org/
-.. _Flask: http://flask.pocoo.org/
