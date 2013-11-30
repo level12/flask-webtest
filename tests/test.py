@@ -63,6 +63,18 @@ class TestMainFeatures(unittest.TestCase):
         r = self.w.get('/whoami/')
         self.assertEqual(r.body, 'aromanovich')
 
+    def test_init(self):
+        w = TestApp(self.app)
+        self.assertEqual(w.get('/').status_code, 200)
+
+        original_server_name = self.app.config['SERVER_NAME']
+        try:
+            self.app.config['SERVER_NAME'] = 'webtest-app.local'
+            w = TestApp(self.app)
+            self.assertEqual(w.get('/').status_code, 200)
+        finally:
+            self.app.config['SERVER_NAME'] = original_server_name
+
 
 class TestSQLAlchemyFeatures(unittest.TestCase):
     def setUp(self):

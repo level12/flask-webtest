@@ -159,25 +159,37 @@ class TestApp(BaseTestApp):
 
     .. attribute:: session
 
-        Dictionary containing session data.
+        Dictionary that contains session data.
 
     If exactly one template was used to render the response, it's name and context
     can be accessed using `response.template` and `response.context` properties.
 
+    If `app` config sets SERVER_NAME and HTTP_HOST is not specified in
+    `extra_environ`, :class:`TestApp` will also set HTTP_HOST to SERVER_NAME
+    for all requests to the app.
+
+    :param app: :class:`flask.Flask` instance
     :param db: :class:`flask.ext.sqlalchemy.SQLAlchemy` instance
     :param use_session_scopes: if specified, application performs each request
-                               within it's own separate session scopes
+                               within it's own separate session scope
     """
     RequestClass = TestRequest
 
     def __init__(self, app, db=None, use_session_scopes=False, cookiejar=None,
-                 *args, **kwargs):
+                 extra_environ=None, *args, **kwargs):
         if use_session_scopes:
             assert db, ('`db` (instance of `flask.ext.sqlalchemy.SQLAlchemy`) '
                         'must be passed to use session scopes.')
         self.db = db
         self.use_session_scopes = use_session_scopes
-        super(TestApp, self).__init__(app, *args, **kwargs)
+
+        if extra_environ is None:
+            extra_environ = {}
+        if app.config['SERVER_NAME'] and 'HTTP_HOST' not in extra_environ:
+            extra_environ['HTTP_HOST'] = app.config['SERVER_NAME']
+
+        super(TestApp, self).__init__(app, extra_environ=extra_environ,
+                                      *args, **kwargs)
         # cookielib.CookieJar defines __len__ and empty CookieJar evaluates
         # to False in boolan context. That's why we explicitly compare
         # `cookiejar` with None:
