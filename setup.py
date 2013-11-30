@@ -16,7 +16,7 @@ from setuptools import setup
 
 setup(
     name='Flask-WebTest',
-    version='0.0.5',
+    version='0.0.6',
     url='https://github.com/aromanovich/flask-webtest',
     license='BSD',
     description = 'Utilities for testing Flask applications with WebTest.',
