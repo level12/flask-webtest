@@ -1,4 +1,4 @@
-from flask import Flask, request, flash, render_template
+from flask import Flask, request, flash, render_template, session
 
 
 app = Flask(__name__)
@@ -17,3 +17,8 @@ def home():
         return response
     else:
         return render_template('template.html', text='Hello!')
+
+
+@app.route('/whoami/')
+def whoami():
+    return session.get('username', 'nobody')

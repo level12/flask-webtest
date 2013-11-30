@@ -53,6 +53,16 @@ class TestMainFeatures(unittest.TestCase):
             r.contexts['extra-template.html']['extra_text'],
             'Some text.')
 
+    def test_session_transaction(self):
+        r = self.w.get('/whoami/')
+        self.assertEqual(r.body, 'nobody')
+        
+        with self.w.session_transaction() as sess:
+            sess['username'] = 'aromanovich'
+        
+        r = self.w.get('/whoami/')
+        self.assertEqual(r.body, 'aromanovich')
+
 
 class TestSQLAlchemyFeatures(unittest.TestCase):
     def setUp(self):

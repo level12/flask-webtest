@@ -1,6 +1,8 @@
 # coding: utf-8
+import cookielib
 from copy import copy
 from functools import partial
+from contextlib import contextmanager
 
 from werkzeug.local import LocalStack
 from flask import g, session, get_flashed_messages
@@ -127,6 +129,16 @@ class TestRequest(BaseTestRequest):
     ResponseClass = TestResponse
 
 
+class CookieJar(cookielib.CookieJar):
+    """CookieJar that always sets ASCII headers, even if cookies have
+    unicode parts such as name, value or path. It is necessary to make
+    :meth:`TestApp.session_transaction` work correctly.
+    """
+    def _cookie_attrs(self, cookies):
+        attrs = cookielib.CookieJar._cookie_attrs(self, cookies)
+        return map(str, attrs)
+
+
 class TestApp(BaseTestApp):
     """Extends :class:`webtest.TestApp` by adding few fields to responses:
 
@@ -158,13 +170,18 @@ class TestApp(BaseTestApp):
     """
     RequestClass = TestRequest
 
-    def __init__(self, app, db=None, use_session_scopes=False, *args, **kwargs):
+    def __init__(self, app, db=None, use_session_scopes=False, cookiejar=None,
+                 *args, **kwargs):
         if use_session_scopes:
             assert db, ('`db` (instance of `flask.ext.sqlalchemy.SQLAlchemy`) '
                         'must be passed to use session scopes.')
         self.db = db
         self.use_session_scopes = use_session_scopes
         super(TestApp, self).__init__(app, *args, **kwargs)
+        # cookielib.CookieJar defines __len__ and empty CookieJar evaluates
+        # to False in boolan context. That's why we explicitly compare
+        # `cookiejar` with None:
+        self.cookiejar = CookieJar() if cookiejar is None else cookiejar
 
     def do_request(self, *args, **kwargs):
         store = {}
@@ -194,3 +211,33 @@ class TestApp(BaseTestApp):
         response.flashes = store.get('flashes', [])
         response.contexts = dict(store.get('contexts', []))
         return response
+
+    @contextmanager
+    def session_transaction(self):
+        """When used in combination with a with statement this opens
+        a session transaction. This can be used to modify the session
+        that the test client uses. Once the with block is left the session
+        is stored back.
+
+        For example, if you use Flask-Login, you can log in a user using
+        this method::
+
+            with client.session_transaction() as sess:
+                sess['user_id'] = 1
+
+        Internally it uses :meth:`flask.testing.FlaskClient.session_transaction`.
+        """
+        with self.app.test_client() as client:
+            for cookie in self.cookiejar:
+                client.cookie_jar.set_cookie(cookie)
+
+            with client.session_transaction() as sess:
+                yield sess
+
+            for cookie in client.cookie_jar:
+                # Cookies from `client.cookie_jar` may contain unicode name
+                # and value. It would make WebTest linter (:mod:`webtest.lint`)
+                # throw assertion errors about unicode environmental
+                # variable (HTTP_COOKIE), but we use custom CookieJar that is
+                # aware of this oddity and always sets 8-bit headers.
+                self.cookiejar.set_cookie(cookie)

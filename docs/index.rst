@@ -35,7 +35,6 @@ Example of usage
         def setUp(self):
             self.app = app
             self.w = TestApp(self.app, db=db, use_session_scopes=True)
-            # Note: `self.app.wsgi_app` would be great too
 
         def test(self):
             r = self.w.get('/')
@@ -295,6 +294,8 @@ API Documentation
 This documentation is automatically generated from Flask-WebTest's source code.
 
 .. autoclass:: TestApp
+   
+    .. automethod:: session_transaction
 
 
 API related to Flask-SQLAlchemy 
