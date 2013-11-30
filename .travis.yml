@@ -6,4 +6,4 @@ install:
   - python setup.py install
   - pip install -r requirements-dev.txt
 script:
-  - cd tests && python -m unittest test
+  - ./test.sh
