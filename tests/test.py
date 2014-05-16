@@ -61,6 +61,8 @@ class TestMainFeatures(unittest.TestCase):
             sess['username'] = 'aromanovich'
 
         r = self.w.get('/whoami/')
+
+        self.assertEqual(r.session['username'], 'aromanovich')
         self.assertEqual(r.body, 'aromanovich')
 
     def test_init(self):
