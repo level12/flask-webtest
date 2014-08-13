@@ -3,8 +3,8 @@ import unittest
 import sqlalchemy
 from flask.ext.webtest import TestApp
 
-from core import app as app1
-from core_sqlalchemy import app as app2, db, User
+from .core import app as app1
+from .core_sqlalchemy import app as app2, db, User
 
 try:
     from flask.signals import message_flashed
