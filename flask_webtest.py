@@ -120,12 +120,12 @@ class TestResponse(BaseTestResponse):
     @property
     def context(self):
         self._make_contexts_assertions()
-        return self.contexts.values()[0]
+        return list(self.contexts.values())[0]
 
     @property
     def template(self):
         self._make_contexts_assertions()
-        return self.contexts.keys()[0]
+        return list(self.contexts.keys())[0]
 
 
 class TestRequest(BaseTestRequest):
