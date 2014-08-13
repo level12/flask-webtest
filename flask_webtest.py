@@ -1,5 +1,8 @@
 # coding: utf-8
-import cookielib
+try:
+    from http import cookiejar
+except ImportError:
+    import cookielib as cookiejar
 from copy import copy
 from functools import partial
 from contextlib import contextmanager
@@ -117,25 +120,25 @@ class TestResponse(BaseTestResponse):
     @property
     def context(self):
         self._make_contexts_assertions()
-        return self.contexts.values()[0]
+        return list(self.contexts.values())[0]
 
     @property
     def template(self):
         self._make_contexts_assertions()
-        return self.contexts.keys()[0]
+        return list(self.contexts.keys())[0]
 
 
 class TestRequest(BaseTestRequest):
     ResponseClass = TestResponse
 
 
-class CookieJar(cookielib.CookieJar):
+class CookieJar(cookiejar.CookieJar):
     """CookieJar that always sets ASCII headers, even if cookies have
     unicode parts such as name, value or path. It is necessary to make
     :meth:`TestApp.session_transaction` work correctly.
     """
     def _cookie_attrs(self, cookies):
-        attrs = cookielib.CookieJar._cookie_attrs(self, cookies)
+        attrs = cookiejar.CookieJar._cookie_attrs(self, cookies)
         return map(str, attrs)
 
 
