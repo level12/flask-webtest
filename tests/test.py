@@ -3,8 +3,8 @@ import unittest
 import sqlalchemy
 from flask.ext.webtest import TestApp
 
-from core import app as app1
-from core_sqlalchemy import app as app2, db, User
+from .core import app as app1
+from .core_sqlalchemy import app as app2, db, User
 
 try:
     from flask.signals import message_flashed
@@ -55,7 +55,7 @@ class TestMainFeatures(unittest.TestCase):
 
     def test_session_transaction(self):
         r = self.w.get('/whoami/')
-        self.assertEqual(r.body, 'nobody')
+        self.assertEqual(r.body.decode('utf-8'), 'nobody')
 
         with self.w.session_transaction() as sess:
             sess['username'] = 'aromanovich'
@@ -63,7 +63,7 @@ class TestMainFeatures(unittest.TestCase):
         r = self.w.get('/whoami/')
 
         self.assertEqual(r.session['username'], 'aromanovich')
-        self.assertEqual(r.body, 'aromanovich')
+        self.assertEqual(r.body.decode('utf-8'), 'aromanovich')
 
     def test_init(self):
         w = TestApp(self.app)
@@ -98,16 +98,16 @@ class TestSQLAlchemyFeatures(unittest.TestCase):
         db.session.commit()
 
         r = self.w.get('/user/%i/' % user.id)
-        self.assertEqual(r.body, 'Hello, Anton!')
+        self.assertEqual(r.body.decode('utf-8'), 'Hello, Anton!')
 
         # Note: we did not commit the change to `user`!
         user.name = 'Petr'
 
         r = self.w_without_scoping.get('/user/%i/' % user.id)
-        self.assertEqual(r.body, 'Hello, Petr!')
+        self.assertEqual(r.body.decode('utf-8'), 'Hello, Petr!')
 
         r = self.w.get('/user/%i/' % user.id)
-        self.assertEqual(r.body, 'Hello, Anton!')
+        self.assertEqual(r.body.decode('utf-8'), 'Hello, Anton!')
 
     def test_2(self):
         user = User(name='Anton')
@@ -115,18 +115,18 @@ class TestSQLAlchemyFeatures(unittest.TestCase):
         db.session.commit()
 
         r = self.w.get('/user/%i/' % user.id)
-        self.assertEqual(r.body, 'Hello, Anton!')
+        self.assertEqual(r.body.decode('utf-8'), 'Hello, Anton!')
 
         r = self.w.post('/user/%i/preview/' % user.id, {
             'greeting': 'Hi, %s.',
         })
-        self.assertEqual(r.body, 'Hi, Anton.')
+        self.assertEqual(r.body.decode('utf-8'), 'Hi, Anton.')
         db.session.refresh(user)
 
         r = self.w_without_scoping.post('/user/%i/preview/' % user.id, {
             'greeting': 'Hi, %s.',
         })
-        self.assertEqual(r.body, 'Hi, Anton.')
+        self.assertEqual(r.body.decode('utf-8'), 'Hi, Anton.')
         self.assertRaises(
             sqlalchemy.exc.InvalidRequestError,
             lambda: db.session.refresh(user))

@@ -1,2 +1,2 @@
 #!/bin/bash
-(cd tests && python -m unittest test)
+python -m unittest discover
