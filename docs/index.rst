@@ -278,8 +278,8 @@ Consider this example:
         db.session.commit()
 
     # Again, current session represents transaction X
-    db.session.refresh(layout)
-    self.assertEqual(layout.name, 'Petr')
+    db.session.refresh(user)
+    self.assertEqual(user.name, 'Petr')
 
 The last assertion would fail if ``REPEATABLE READ`` level is being used,
 because transaction ``X`` is isolated from any changes made by transaction ``Y``.
