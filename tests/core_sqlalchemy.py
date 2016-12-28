@@ -1,6 +1,6 @@
 from flask import Flask, request
-from flask.ext.sqlalchemy import SQLAlchemy
-from flask.ext.webtest import get_scopefunc
+from flask_sqlalchemy import SQLAlchemy
+from flask_webtest import get_scopefunc
 
 
 def make_db(app):
