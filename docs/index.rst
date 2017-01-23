@@ -1,7 +1,7 @@
 =============
 Flask-WebTest
 =============
-.. currentmodule:: flask.ext.webtest
+.. currentmodule:: flask_webtest
 
 .. contents::
    :local:
@@ -28,7 +28,7 @@ Example of usage
 ::
 
     from unittest import TestCase
-    from flask.ext.webtest import TestApp
+    from flask_webtest import TestApp
     from main import app, db
 
     class ExampleTest(TestCase):
@@ -52,10 +52,10 @@ API Documentation
 This documentation is automatically generated from Flask-WebTest's source code.
 
 .. autoclass:: TestApp
-   
+
     .. automethod:: session_transaction
 
-API related to Flask-SQLAlchemy 
+API related to Flask-SQLAlchemy
 -------------------------------
 .. autofunction:: get_scopefunc
 
@@ -78,11 +78,11 @@ is omitted for brevity):
 
     app = Flask(__name__)
     db = SQLAlchemy(app)
-    
+
     @app.route('/user/<int:id>/')
     def user(id):
         return User.query.get_or_404(id).greet()
-    
+
     @app.route('/user/<int:id>/preview/', methods=['POST'])
     def preview(id):
         user = User.query.get_or_404(id)
@@ -104,11 +104,11 @@ An approach that comes to mind first may look as follows:
             self.app_context = app.app_context()
             self.app_context.push()
             db.create_all()
-    
+
         def tearDown(self):
             db.drop_all()
             self.app_context.pop()
-    
+
         def test(self):
             user = User(name='Anton')
             db.session.add(user)
@@ -125,7 +125,7 @@ Everything looks good, but sometimes strange (at first sight) things happen:
       user.name = 'Petr'
       # Note: we did not commit the change to `user`!
       r = self.w.get('/user/%i/' % user.id)
-        
+
       self.assertEqual(r.body, 'Hello, Anton!')
       # AssertionError: 'Hello, Petr!' != 'Hello, Anton!'
 
@@ -134,12 +134,12 @@ Everything looks good, but sometimes strange (at first sight) things happen:
   ::
 
       r = self.w.post('/user/%i/preview/' % user.id, {
-          'greeting': 'Hi, %s.',    
+          'greeting': 'Hi, %s.',
       })
       self.assertEqual(r.body, 'Hi, Anton.')
 
       db.session.refresh(user)
-      # InvalidRequestError: Instance '<User at 0xa8c0e8c>' is 
+      # InvalidRequestError: Instance '<User at 0xa8c0e8c>' is
       # not persistent within this session
 
 * And so on.
@@ -182,17 +182,17 @@ that has to be used during testing.
 How to make use of them:
 
 1. Replace default ``scopefunc`` with ``SQLAlchemyScope``-aware ``scopefunc`` from Flask-WebTest:
-    
+
    ::
 
-      from flask.ext.webtest import get_scopefunc
-        
+      from flask_webtest import get_scopefunc
+
       def make_db(app):
           session_options = {}
           if app.testing:
               session_options['scopefunc'] = get_scopefunc()
           return SQLAlchemy(app, session_options=session_options)
-        
+
       app = Flask(__name__)
       ...
       db = make_db(app)
@@ -205,18 +205,18 @@ How to make use of them:
       db.session.add(user)
       db.session.commit()
       print user in db.session  # True
-        
+
       with SessionScope(db):
           # Brand new session!
-          print user in db.session  # False 
+          print user in db.session  # False
    or
-   
+
    ::
 
       scope = SessionScope(db)
       scope.push()
       try:
-          ...    
+          ...
       finally:
           scope.pop()
 
@@ -243,7 +243,7 @@ to run them within separate scopes too.
             db.session.commit()
 
         print john in db.session  # False
-        
+
         # Any call to an expired model requires database hit, so
         # `print john.name` would cause the following error:
         #
@@ -255,18 +255,18 @@ to run them within separate scopes too.
         # To continue working with detached object, we need to
         # reconcile it with the current session:
         john = db.session.merge(john)
-        
+
         print john in db.session  # True
         print john.name  # John
 
-Dealing with transaction isolation levels 
+Dealing with transaction isolation levels
 -----------------------------------------
 
 Using a high isolation level may cause some inconveniences during testing.
 Consider this example:
 
 ::
-    
+
     # Current session represents transaction X
     user = User.query.filter(User.name == 'Anton').first()
 
@@ -287,7 +287,7 @@ because transaction ``X`` is isolated from any changes made by transaction ``Y``
 To make changes from ``Y`` visible you need to either commit or rollback ``X``:
 
 ::
-    
+
     ...
 
     # Again, current session represents transaction X
@@ -300,7 +300,7 @@ and avoid thinking about this issue:
 
 ::
 
-    from flask.ext.sqlalchemy import SQLAlchemy as BaseSQLAlchemy
+    from flask_sqlalchemy import SQLAlchemy as BaseSQLAlchemy
 
     class SQLAlchemy(BaseSQLAlchemy):
         def apply_driver_hacks(self, app, info, options):

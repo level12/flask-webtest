@@ -15,7 +15,7 @@ from webtest import (TestApp as BaseTestApp,
                      TestResponse as BaseTestResponse)
 
 try:
-    from flask.ext.sqlalchemy import connection_stack
+    from flask_sqlalchemy import connection_stack
 except ImportError:
     connection_stack = None
 
@@ -36,7 +36,7 @@ class SessionScope(object):
     When popped, removes the current session and swap the value of
     :func:`.scopefunc` to the one that was before.
 
-    :param db: :class:`flask.ext.sqlalchemy.SQLAlchemy` instance
+    :param db: :class:`flask_sqlalchemy.SQLAlchemy` instance
     """
 
     def __init__(self, db):
@@ -172,7 +172,7 @@ class TestApp(BaseTestApp):
     for all requests to the app.
 
     :param app: :class:`flask.Flask` instance
-    :param db: :class:`flask.ext.sqlalchemy.SQLAlchemy` instance
+    :param db: :class:`flask_sqlalchemy.SQLAlchemy` instance
     :param use_session_scopes: if specified, application performs each request
                                within it's own separate session scope
     """
@@ -181,7 +181,7 @@ class TestApp(BaseTestApp):
     def __init__(self, app, db=None, use_session_scopes=False, cookiejar=None,
                  extra_environ=None, *args, **kwargs):
         if use_session_scopes:
-            assert db, ('`db` (instance of `flask.ext.sqlalchemy.SQLAlchemy`) '
+            assert db, ('`db` (instance of `flask_sqlalchemy.SQLAlchemy`) '
                         'must be passed to use session scopes.')
         self.db = db
         self.use_session_scopes = use_session_scopes
