@@ -8,16 +8,16 @@ from functools import partial
 from contextlib import contextmanager
 
 from werkzeug.local import LocalStack
-from flask import g, session, get_flashed_messages
+from flask import g, session, get_flashed_messages, _app_ctx_stack
 from flask.signals import template_rendered, request_started, request_finished
 from webtest import (TestApp as BaseTestApp,
                      TestRequest as BaseTestRequest,
                      TestResponse as BaseTestResponse)
 
 try:
-    from flask_sqlalchemy import connection_stack
+    import flask_sqlalchemy
 except ImportError:
-    connection_stack = None
+    flask_sqlalchemy = None
 
 try:
     # Available starting with Flask 0.10
@@ -67,8 +67,14 @@ def get_scopefunc(original_scopefunc=None):
     """
 
     if original_scopefunc is None:
-        assert connection_stack, 'Is Flask-SQLAlchemy installed?'
-        original_scopefunc = connection_stack.__ident_func__
+        assert flask_sqlalchemy, 'Is Flask-SQLAlchemy installed?'
+
+        # support flask_sqlalchemy <2.2 where the connection_stack was either
+        # the app stack or the request stack
+        try:
+            original_scopefunc = flask_sqlalchemy.connection_stack.__ident_func__
+        except AttributeError:
+            original_scopefunc = _app_ctx_stack.__ident_func__
 
     def scopefunc():
         rv = original_scopefunc()
