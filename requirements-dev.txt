@@ -1,2 +1,2 @@
-Flask-SQLAlchemy==1.0
+Flask-SQLAlchemy==2.2
 Sphinx==1.1.3
