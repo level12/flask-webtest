@@ -8,7 +8,7 @@ from functools import partial
 from contextlib import contextmanager
 
 from werkzeug.local import LocalStack
-from flask import g, session, get_flashed_messages, _app_ctx_stack
+from flask import g, session, get_flashed_messages
 from flask.signals import template_rendered, request_started, request_finished
 from webtest import (TestApp as BaseTestApp,
                      TestRequest as BaseTestRequest,
@@ -69,11 +69,14 @@ def get_scopefunc(original_scopefunc=None):
     if original_scopefunc is None:
         assert flask_sqlalchemy, 'Is Flask-SQLAlchemy installed?'
 
-        # support flask_sqlalchemy <2.2 where the connection_stack was either
-        # the app stack or the request stack
         try:
+            # for flask_sqlalchemy older than 2.2 where the connection_stack
+            # was either the app stack or the request stack
             original_scopefunc = flask_sqlalchemy.connection_stack.__ident_func__
         except AttributeError:
+            # when flask_sqlalchemy 2.2 or newer, which supports only flask 0.10
+            # or newer, we use app stack
+            from flask import _app_ctx_stack
             original_scopefunc = _app_ctx_stack.__ident_func__
 
     def scopefunc():
