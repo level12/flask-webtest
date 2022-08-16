@@ -67,17 +67,13 @@ def get_scopefunc(original_scopefunc=None):
     """
 
     if original_scopefunc is None:
-        assert flask_sqlalchemy, 'Is Flask-SQLAlchemy installed?'
+        assert flask_sqlalchemy, 'Is Flask-SQLAlchemy installed?'        
 
-        try:
-            # for flask_sqlalchemy older than 2.2 where the connection_stack
-            # was either the app stack or the request stack
-            original_scopefunc = flask_sqlalchemy.connection_stack.__ident_func__
-        except AttributeError:
-            # when flask_sqlalchemy 2.2 or newer, which supports only flask 0.10
-            # or newer, we use app stack
-            from flask import _app_ctx_stack
-            original_scopefunc = _app_ctx_stack.__ident_func__
+        # Base flask-webtest had a couple of methods to determine a default
+        # original scope, depending on the version of flask-sqlalchemy installed.
+        # Here, we want to assume flask-sqlalchemy >= 2.5, which defines a
+        # usable _ident_func
+        original_scopefunc = flask_sqlalchemy._ident_func
 
     def scopefunc():
         rv = original_scopefunc()

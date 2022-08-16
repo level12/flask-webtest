@@ -25,10 +25,10 @@ setup(
     author_email='anthony.romanovich@gmail.com',
     py_modules=['flask_webtest'],
     test_suite='tests.test',
-    tests_require=['Flask-SQLAlchemy'],
+    tests_require=['Flask-SQLAlchemy>=2.5.0'],
     zip_safe=False,
     install_requires=[
-        'Flask>=0.8',
+        'Flask>=2.1.0',
         'WebTest',
         'blinker',
     ],
