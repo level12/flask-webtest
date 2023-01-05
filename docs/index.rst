@@ -46,6 +46,20 @@ Example of usage
             # ...and from session
             self.assertNotIn('user_id', r.session)
 
+
+Configuration
+=============
+
+Flask-WebTest uses an app config variable, `FLASK_WEBTEST_PUSH_APP_CONTEXT`, to
+determine whether to push a fresh app context on each test request. By default,
+to preserve backwards compatibility, this config flag is disabled. However, in
+general production use, flask pushes both an app context and a request context
+for each request cycle.
+
+Depending on app architecture and the way in which the app is initialized for
+running a test suite, you may need to enable these context pushes.
+
+
 API Documentation
 =================
 

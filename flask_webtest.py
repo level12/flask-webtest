@@ -5,7 +5,7 @@ except ImportError:
     import cookielib as cookiejar
 from copy import copy
 from functools import partial
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 
 from werkzeug.local import LocalStack
 from flask import g, session, get_flashed_messages
@@ -67,13 +67,17 @@ def get_scopefunc(original_scopefunc=None):
     """
 
     if original_scopefunc is None:
-        assert flask_sqlalchemy, 'Is Flask-SQLAlchemy installed?'        
+        assert flask_sqlalchemy, 'Is Flask-SQLAlchemy installed?'
 
-        # Base flask-webtest had a couple of methods to determine a default
-        # original scope, depending on the version of flask-sqlalchemy installed.
-        # Here, we want to assume flask-sqlalchemy >= 2.5, which defines a
-        # usable _ident_func
-        original_scopefunc = flask_sqlalchemy._ident_func
+        try:
+            # for flask_sqlalchemy older than 2.2 where the connection_stack
+            # was either the app stack or the request stack
+            original_scopefunc = flask_sqlalchemy.connection_stack.__ident_func__
+        except AttributeError:
+            # when flask_sqlalchemy 2.2 or newer, which supports only flask 0.10
+            # or newer, we use app stack
+            from flask import _app_ctx_stack
+            original_scopefunc = _app_ctx_stack.__ident_func__
 
     def scopefunc():
         rv = original_scopefunc()
@@ -216,8 +220,13 @@ class TestApp(BaseTestApp):
         if self.use_session_scopes:
             scope = SessionScope(self.db)
             scope.push()
+        
+        context = nullcontext
+        if self.app.config.get('FLASK_WEBTEST_PUSH_APP_CONTEXT', False):
+            context = self.app.app_context
         try:
-            response = super(TestApp, self).do_request(*args, **kwargs)
+            with context():
+                response = super(TestApp, self).do_request(*args, **kwargs)
         finally:
             if self.use_session_scopes:
                 scope.pop()
