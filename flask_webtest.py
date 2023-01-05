@@ -74,10 +74,15 @@ def get_scopefunc(original_scopefunc=None):
             # was either the app stack or the request stack
             original_scopefunc = flask_sqlalchemy.connection_stack.__ident_func__
         except AttributeError:
-            # when flask_sqlalchemy 2.2 or newer, which supports only flask 0.10
-            # or newer, we use app stack
-            from flask import _app_ctx_stack
-            original_scopefunc = _app_ctx_stack.__ident_func__
+            try:
+                # when flask_sqlalchemy 2.2 or newer, which supports only flask 0.10
+                # or newer, we use app stack
+                from flask import _app_ctx_stack
+                original_scopefunc = _app_ctx_stack.__ident_func__
+            except AttributeError:
+                # newer flask does not expose an __ident_func__, use greenlet directly
+                import greenlet
+                original_scopefunc = greenlet.getcurrent
 
     def scopefunc():
         rv = original_scopefunc()

@@ -11,6 +11,7 @@ def make_db(app):
 
 
 app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
 app.testing = True
 db = make_db(app)
 
