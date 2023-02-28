@@ -223,6 +223,7 @@ How to make use of them:
       with SessionScope(db):
           # Brand new session!
           print user in db.session  # False
+
    or
 
    ::
