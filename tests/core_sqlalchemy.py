@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, abort, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_webtest import get_scopefunc
 
@@ -12,6 +12,7 @@ def make_db(app):
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.testing = True
 db = make_db(app)
 
@@ -27,12 +28,17 @@ class User(db.Model):
 
 @app.route('/user/<int:id>/')
 def user(id):
-    return User.query.get_or_404(id).greet()
+    user = db.session.get(User, id)
+    if not user:
+        return abort(404)
+    return user.greet()
 
 
 @app.route('/user/<int:id>/preview/', methods=['POST'])
 def preview(id):
-    user = User.query.get_or_404(id)
+    user = db.session.get(User, id)
+    if not user:
+        return abort(404)
     user.greeting = request.form['greeting']
     db.session.expunge(user)
     return user.greet()

@@ -11,7 +11,7 @@ Links
 * `development version
   <http://github.com/aromanovich/flask-webtest/zipball/master#egg=Flask-WebTest-dev>`_
 """
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 setup(
@@ -23,18 +23,23 @@ setup(
     long_description=__doc__,
     author='Anton Romanovich',
     author_email='anthony.romanovich@gmail.com',
-    py_modules=['flask_webtest'],
-    test_suite='tests.test',
-    tests_require=['Flask-SQLAlchemy>=2.5.0'],
+    include_package_data=True,
+    packages=find_packages(exclude=[]),
     zip_safe=False,
     install_requires=[
-        'Flask>=2.1.0',
+        'Flask>=1.1.0',
         'WebTest',
         'blinker',
     ],
+    extras_require={
+        'tests': [
+            'flask-sqlalchemy',
+        ],
+    },
     classifiers=[
         'Topic :: Software Development :: Testing',
         'Environment :: Web Environment',
         'Intended Audience :: Developers',
+        'Programming Language :: Python :: 3',
     ],
 )

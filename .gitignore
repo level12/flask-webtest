@@ -1,1 +1,7 @@
 docs/_build
+Flask_WebTest.egg-info
+__pycache__
+tests/__pycache__
+build
+dist
+.tox

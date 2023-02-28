@@ -225,7 +225,7 @@ class TestApp(BaseTestApp):
         if self.use_session_scopes:
             scope = SessionScope(self.db)
             scope.push()
-        
+
         context = nullcontext
         if self.app.config.get('FLASK_WEBTEST_PUSH_APP_CONTEXT', False):
             context = self.app.app_context
