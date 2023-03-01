@@ -9,15 +9,21 @@ Links
 
 * `documentation <http://flask-webtest.readthedocs.org/en/latest/>`_
 * `development version
-  <http://github.com/aromanovich/flask-webtest/zipball/master#egg=Flask-WebTest-dev>`_
+  <http://github.com/level12/flask-webtest/zipball/master#egg=Flask-WebTest-dev>`_
 """
+import os.path as osp
 from setuptools import setup, find_packages
 
+cdir = osp.abspath(osp.dirname(__file__))
+version_fpath = osp.join(cdir, 'version.py')
+version_globals = {}
+with open(version_fpath) as fo:
+    exec(fo.read(), version_globals)
 
 setup(
     name='Flask-WebTest',
-    version='0.1.0',
-    url='https://github.com/aromanovich/flask-webtest',
+    version=version_globals['VERSION'],
+    url='https://github.com/level12/flask-webtest',
     license='BSD',
     description = 'Utilities for testing Flask applications with WebTest.',
     long_description=__doc__,
