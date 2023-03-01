@@ -1,10 +1,14 @@
 Flask-WebTest
 =============
 
-.. image:: https://travis-ci.org/aromanovich/flask-webtest.png?branch=master
-   :target: https://travis-ci.org/aromanovich/flask-webtest
+.. image:: https://dl.circleci.com/status-badge/img/gh/level12/flask-webtest/tree/master.svg?style=svg
+        :target: https://dl.circleci.com/status-badge/redirect/gh/level12/flask-webtest/tree/master
 
 Flask-WebTest provides a set of utilities to ease testing Flask applications with WebTest.
+
+As a small-in-scope project and relatively mature/stable, lack of recent commits does not indicate
+it is abandoned. Occasionally, Flask or another dependency will deprecate imports. Most updates
+here will be to resolve those breakages when they occur.
 
 
 Installation
