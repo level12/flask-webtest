@@ -12,7 +12,7 @@ Links
   <http://github.com/level12/flask-webtest/zipball/master#egg=Flask-WebTest-dev>`_
 """
 import os.path as osp
-from setuptools import setup, find_packages
+from setuptools import setup
 
 cdir = osp.abspath(osp.dirname(__file__))
 version_fpath = osp.join(cdir, 'version.py')
@@ -30,7 +30,7 @@ setup(
     author='Anton Romanovich',
     author_email='anthony.romanovich@gmail.com',
     include_package_data=True,
-    packages=find_packages(exclude=[]),
+    py_modules=['flask_webtest'],
     zip_safe=False,
     install_requires=[
         'Flask>=1.1.0',
