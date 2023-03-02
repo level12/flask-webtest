@@ -1,6 +1,14 @@
 Changelog
 =========
 
+0.1.1 released 2023-03-02
+-------------------------
+
+- fix package definition (65c73aa_)
+
+.. _65c73aa: https://github.com/level12/flask-webtest/commit/65c73aa
+
+
 0.1.0 released 2023-03-02
 -------------------------
 
