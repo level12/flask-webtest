@@ -1,6 +1,14 @@
 Changelog
 =========
 
+0.1.3 released 2023-05-12
+-------------------------
+
+- support flask 2.3 cookie domain handling (96c18d1_)
+
+.. _96c18d1: https://github.com/level12/flask-webtest/commit/96c18d1
+
+
 0.1.2 released 2023-05-12
 -------------------------
 
