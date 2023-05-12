@@ -1,6 +1,14 @@
 Changelog
 =========
 
+0.1.2 released 2023-05-12
+-------------------------
+
+- support werkzeug 2.3 refactored cookies (104ce84_)
+
+.. _104ce84: https://github.com/level12/flask-webtest/commit/104ce84
+
+
 0.1.1 released 2023-03-02
 -------------------------
 
