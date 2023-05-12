@@ -5,7 +5,7 @@ from functools import partial
 from contextlib import contextmanager, nullcontext
 
 from werkzeug.local import LocalStack
-from flask import g, session, get_flashed_messages
+from flask import g, session, get_flashed_messages, __version__ as flask_version
 from flask.signals import template_rendered, request_started, request_finished
 from webtest import (TestApp as BaseTestApp,
                      TestRequest as BaseTestRequest,
@@ -255,7 +255,8 @@ class TestApp(BaseTestApp):
             # Domain does not matter much here, but the cookiejar policy will block
             # local domains that are not .local
             domain = 'local'
-        if not domain.startswith('.'):
+        if flask_version.startswith('2.2.') and not domain.startswith('.'):
+            # Flask 2.3 dropped the leading dot for cookie domains
             domain = f'.{domain}'
         cookie = cookiejar.Cookie(
             version=0,
