@@ -1,8 +1,5 @@
 # coding: utf-8
-try:
-    from http import cookiejar
-except ImportError:
-    import cookielib as cookiejar
+from http import cookiejar
 from copy import copy
 from functools import partial
 from contextlib import contextmanager, nullcontext
@@ -246,6 +243,40 @@ class TestApp(BaseTestApp):
         response.contexts = dict(store.get('contexts', []))
         return response
 
+    def set_werkzeug_cookie(self, name, value, domain, path):
+        """
+        As of Werkzeug 2.3.0, cookie implementation was refactored, and cookies
+        no longer have the same footprint as http.cookiejar.Cookie. But, webtest
+        expects the http-lib cookies to set up the test request.
+
+        Do some basic translation here for any cookies set in a session transaction.
+        """
+        if domain == 'localhost':
+            # Domain does not matter much here, but the cookiejar policy will block
+            # local domains that are not .local
+            domain = 'local'
+        if not domain.startswith('.'):
+            domain = f'.{domain}'
+        cookie = cookiejar.Cookie(
+            version=0,
+            name=name,
+            value=value,
+            port=None,
+            port_specified=False,
+            domain=domain,
+            domain_specified=True,
+            domain_initial_dot=False,
+            path=path,
+            path_specified=True,
+            secure=False,
+            expires=None,
+            discard=False,
+            comment=None,
+            comment_url=None,
+            rest=None
+        )
+        self.cookiejar.set_cookie(cookie)
+
     @contextmanager
     def session_transaction(self):
         """When used in combination with a with statement this opens
@@ -262,16 +293,30 @@ class TestApp(BaseTestApp):
         Internally it uses :meth:`flask.testing.FlaskClient.session_transaction`.
         """
         with self.app.test_client() as client:
+            translate_werkzeug_cookie = hasattr(client, 'get_cookie')
+
             for cookie in self.cookiejar:
-                client.cookie_jar.set_cookie(cookie)
+                if translate_werkzeug_cookie:
+                    client.set_cookie(
+                        cookie.name,
+                        value=cookie.value,
+                        domain=cookie.domain,
+                        path=cookie.path,
+                    )
+                else:
+                    client.cookie_jar.set_cookie(cookie)
 
             with client.session_transaction() as sess:
                 yield sess
 
-            for cookie in client.cookie_jar:
-                # Cookies from `client.cookie_jar` may contain unicode name
-                # and value. It would make WebTest linter (:mod:`webtest.lint`)
-                # throw assertion errors about unicode environmental
-                # variable (HTTP_COOKIE), but we use custom CookieJar that is
-                # aware of this oddity and always sets 8-bit headers.
-                self.cookiejar.set_cookie(cookie)
+            if translate_werkzeug_cookie:
+                for cookie in client._cookies.values():
+                    self.set_werkzeug_cookie(cookie.key, cookie.value, cookie.domain, cookie.path)
+            else:
+                for cookie in client.cookie_jar:
+                    # Cookies from `client.cookie_jar` may contain unicode name
+                    # and value. It would make WebTest linter (:mod:`webtest.lint`)
+                    # throw assertion errors about unicode environmental
+                    # variable (HTTP_COOKIE), but we use custom CookieJar that is
+                    # aware of this oddity and always sets 8-bit headers.
+                    self.cookiejar.set_cookie(cookie)
