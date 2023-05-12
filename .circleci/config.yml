@@ -12,14 +12,12 @@ jobs:
 
             - run:
                 name: install tox
-                command: pip install tox
+                command: python3.10 -m pip install tox
 
             - run:
                 name: version checks
                 command: |
-                    python --version
-                    pip --version
-                    virtualenv --version
+                    python3.10 --version
                     tox --version
 
             - run:
