@@ -79,8 +79,8 @@ API related to Flask-SQLAlchemy
 
    .. automethod:: pop
 
-.. _WebTest: http://webtest.readthedocs.org/
-.. _Flask: http://flask.pocoo.org/
+.. _WebTest: https://docs.pylonsproject.org/projects/webtest
+.. _Flask: https://flask.palletsprojects.com
 
 Using Flask-WebTest with Flask-SQLAlchemy
 =========================================
