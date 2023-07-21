@@ -52,6 +52,8 @@ class TestMainFeatures(unittest.TestCase):
 
         self.assertEqual(r.session['username'], 'aromanovich')
         self.assertEqual(r.body.decode('utf-8'), 'aromanovich')
+        with self.w.session_transaction() as sess:
+            self.assertEqual(sess['username'], 'aromanovich')
 
     def test_init(self):
         w = TestApp(self.app)
