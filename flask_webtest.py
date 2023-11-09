@@ -1,11 +1,12 @@
 # coding: utf-8
 from http import cookiejar
+from importlib.metadata import version
 from copy import copy
 from functools import partial
 from contextlib import contextmanager, nullcontext
 
 from werkzeug.local import LocalStack
-from flask import g, session, get_flashed_messages, __version__ as flask_version
+from flask import g, session, get_flashed_messages
 from flask.signals import template_rendered, request_started, request_finished
 from webtest import (TestApp as BaseTestApp,
                      TestRequest as BaseTestRequest,
@@ -23,6 +24,7 @@ except ImportError:
     message_flashed = None
 
 
+flask_version = version('flask')
 _session_scope_stack = LocalStack()
 
 
