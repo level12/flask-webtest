@@ -79,8 +79,8 @@ API related to Flask-SQLAlchemy
 
    .. automethod:: pop
 
-.. _WebTest: http://webtest.readthedocs.org/
-.. _Flask: http://flask.pocoo.org/
+.. _WebTest: https://docs.pylonsproject.org/projects/webtest
+.. _Flask: https://flask.palletsprojects.com
 
 Using Flask-WebTest with Flask-SQLAlchemy
 =========================================
@@ -218,11 +218,11 @@ How to make use of them:
       user = User(name='Anton')
       db.session.add(user)
       db.session.commit()
-      print user in db.session  # True
+      print(user in db.session)  # True
 
       with SessionScope(db):
           # Brand new session!
-          print user in db.session  # False
+          print(user in db.session)  # False
 
    or
 
@@ -257,10 +257,10 @@ to run them within separate scopes too.
             # expire_on_commit=True by default)...
             db.session.commit()
 
-        print john in db.session  # False
+        print(john in db.session)  # False
 
         # Any call to an expired model requires database hit, so
-        # `print john.name` would cause the following error:
+        # `print(john.name)` would cause the following error:
         #
         # DetachedInstanceError: Instance <User at 0x95c756c>
         # is not bound to a Session; attribute refresh
@@ -271,8 +271,8 @@ to run them within separate scopes too.
         # reconcile it with the current session:
         john = db.session.merge(john)
 
-        print john in db.session  # True
-        print john.name  # John
+        print(john in db.session)  # True
+        print(john.name)  # John
 
 Dealing with transaction isolation levels
 -----------------------------------------
