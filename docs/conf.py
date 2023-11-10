@@ -98,7 +98,7 @@ sys.path.append(os.path.abspath('_themes'))
 html_theme_path = ['_themes']
 html_theme = 'flask_small'
 html_theme_options = {
-    'github_fork': 'aromanovich/flask-webtest',
+    'github_fork': 'level12/flask-webtest',
     'index_logo': False,
 }
 
