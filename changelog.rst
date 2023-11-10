@@ -1,6 +1,20 @@
 Changelog
 =========
 
+0.1.4 released 2023-11-10
+-------------------------
+
+- update fork target in docs (15b4cd1_)
+- add config file for ReadTheDocs (b55cb4c_)
+- fix docs URLs and print statements (thanks @azmeuk) (e233fc2_)
+- support flask 3 (602f329_)
+
+.. _15b4cd1: https://github.com/level12/flask-webtest/commit/15b4cd1
+.. _b55cb4c: https://github.com/level12/flask-webtest/commit/b55cb4c
+.. _e233fc2: https://github.com/level12/flask-webtest/commit/e233fc2
+.. _602f329: https://github.com/level12/flask-webtest/commit/602f329
+
+
 0.1.3 released 2023-05-12
 -------------------------
 
