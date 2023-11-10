@@ -40,6 +40,7 @@ setup(
     extras_require={
         'tests': [
             'flask-sqlalchemy',
+            'greenlet',
         ],
     },
     classifiers=[

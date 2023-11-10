@@ -76,7 +76,8 @@ def get_scopefunc(original_scopefunc=None):
                 # or newer, we use app stack
                 from flask import _app_ctx_stack
                 original_scopefunc = _app_ctx_stack.__ident_func__
-            except AttributeError:
+            except (AttributeError, ImportError):
+                # flask 3.0.0 or newer does not export _app_ctx_stack
                 # newer flask does not expose an __ident_func__, use greenlet directly
                 import greenlet
                 original_scopefunc = greenlet.getcurrent
