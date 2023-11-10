@@ -1,15 +1,18 @@
 # coding: utf-8
+import importlib.metadata
 from http import cookiejar
 from copy import copy
 from functools import partial
 from contextlib import contextmanager, nullcontext
 
 from werkzeug.local import LocalStack
-from flask import g, session, get_flashed_messages, __version__ as flask_version
+from flask import g, session, get_flashed_messages
 from flask.signals import template_rendered, request_started, request_finished
 from webtest import (TestApp as BaseTestApp,
                      TestRequest as BaseTestRequest,
                      TestResponse as BaseTestResponse)
+
+flask_version = importlib.metadata.version('flask')
 
 try:
     import flask_sqlalchemy
