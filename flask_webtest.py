@@ -1,15 +1,18 @@
 # coding: utf-8
+import importlib.metadata
 from http import cookiejar
 from copy import copy
 from functools import partial
 from contextlib import contextmanager, nullcontext
 
 from werkzeug.local import LocalStack
-from flask import g, session, get_flashed_messages, __version__ as flask_version
+from flask import g, session, get_flashed_messages
 from flask.signals import template_rendered, request_started, request_finished
 from webtest import (TestApp as BaseTestApp,
                      TestRequest as BaseTestRequest,
                      TestResponse as BaseTestResponse)
+
+flask_version = importlib.metadata.version('flask')
 
 try:
     import flask_sqlalchemy
@@ -76,7 +79,8 @@ def get_scopefunc(original_scopefunc=None):
                 # or newer, we use app stack
                 from flask import _app_ctx_stack
                 original_scopefunc = _app_ctx_stack.__ident_func__
-            except AttributeError:
+            except (AttributeError, ImportError):
+                # flask 3.0.0 or newer does not export _app_ctx_stack
                 # newer flask does not expose an __ident_func__, use greenlet directly
                 import greenlet
                 original_scopefunc = greenlet.getcurrent
