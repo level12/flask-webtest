@@ -1,0 +1,6 @@
+[tools]
+python = ["3.12", "3.9", "3.10", "3.11"]
+
+[env]
+_.python.venv.path = "{{env.WORKON_HOME}}/flask-webtest"
+_.python.venv.create = true
