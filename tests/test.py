@@ -65,6 +65,25 @@ class TestMainFeatures(unittest.TestCase):
         finally:
             self.app.config['SERVER_NAME'] = original_server_name
 
+    def test_localhost_session_transaction(self):
+        ta = TestApp(self.app)
+        resp = ta.get('/sess/')
+        assert resp.request.host == 'localhost:80'
+
+        assert resp.status_code == 200
+        cookies = list(ta.cookiejar)
+        assert len(cookies) == 1
+
+        sess_cookie = cookies[0]
+        assert sess_cookie.domain == 'localhost.local'
+        assert sess_cookie.name == 'session'
+
+        with ta.session_transaction() as sess:
+            sess['picard'] = 'enterprise'
+
+        cookies = list(ta.cookiejar)
+        assert len(cookies) == 1, cookies[1].domain
+
 
 class TestSQLAlchemyFeatures(unittest.TestCase):
     def setUp(self):

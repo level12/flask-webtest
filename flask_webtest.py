@@ -255,13 +255,15 @@ class TestApp(BaseTestApp):
 
         Do some basic translation here for any cookies set in a session transaction.
         """
-        if domain == 'localhost':
-            # Domain does not matter much here, but the cookiejar policy will block
-            # local domains that are not .local
-            domain = 'local'
+        # Match what webtest.set_cookie() does for the domain or we can end up with "duplicate"
+        # cookies with different domains when using session_transaction()
+        if '.' not in domain:
+            domain = "%s.local" % domain
+
         if flask_version.startswith('2.2.') and not domain.startswith('.'):
-            # Flask 2.3 dropped the leading dot for cookie domains
+            # Flask 2.3 dropped the leading dot for cookie domains, but we still need it for < 2.3
             domain = f'.{domain}'
+
         cookie = cookiejar.Cookie(
             version=0,
             name=name,

@@ -22,3 +22,9 @@ def home():
 @app.route('/whoami/')
 def whoami():
     return session.get('username', 'nobody')
+
+
+@app.route('/sess/')
+def sess():
+    session['foo'] = 'bar'
+    return 'ok'
