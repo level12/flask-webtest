@@ -1,6 +1,14 @@
 Changelog
 =========
 
+0.1.6 released 2024-08-22
+-------------------------
+
+- Really fix bug with session_transaction() and localhost (683dd33_)
+
+.. _683dd33: https://github.com/level12/flask-webtest/commit/683dd33
+
+
 0.1.5 released 2024-08-22
 -------------------------
 
