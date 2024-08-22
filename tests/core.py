@@ -24,7 +24,12 @@ def whoami():
     return session.get('username', 'nobody')
 
 
-@app.route('/sess/')
-def sess():
-    session['foo'] = 'bar'
-    return 'ok'
+@app.route('/sess/<action>')
+def sess(action: str):
+    assert action in ('save', 'get')
+    if action == 'save':
+        session['foo'] = 'bar'
+        return 'ok'
+    else:
+        return session.get('picard', 'riker') + session.get('foo', 'baz')
+

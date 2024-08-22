@@ -307,7 +307,12 @@ class TestApp(BaseTestApp):
                     client.set_cookie(
                         cookie.name,
                         value=cookie.value,
-                        domain=cookie.domain,
+                        # http.cookiejar has code everywhere that normalizes "localhost" to
+                        # localhost.local everywhere. But, Flask/Werkzeug just use "localhost".
+                        # If this isn't changed, then FlaskClient looks for cookies that match
+                        # "localhost.local" and "localhost" doesn't match that.  This results in
+                        # losing the existing session (if there is one).
+                        domain='localhost' if cookie.domain == 'localhost.local' else cookie.domain,
                         path=cookie.path,
                     )
                 else:

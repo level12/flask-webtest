@@ -67,7 +67,7 @@ class TestMainFeatures(unittest.TestCase):
 
     def test_localhost_session_transaction(self):
         ta = TestApp(self.app)
-        resp = ta.get('/sess/')
+        resp = ta.get('/sess/save')
         assert resp.request.host == 'localhost:80'
 
         assert resp.status_code == 200
@@ -84,6 +84,8 @@ class TestMainFeatures(unittest.TestCase):
         cookies = list(ta.cookiejar)
         assert len(cookies) == 1, cookies[1].domain
 
+        resp = ta.get('/sess/get')
+        assert resp.text == 'enterprisebar', resp.text
 
 class TestSQLAlchemyFeatures(unittest.TestCase):
     def setUp(self):
