@@ -1,6 +1,16 @@
 Changelog
 =========
 
+0.1.5 released 2024-08-22
+-------------------------
+
+- Fix bug with session_transaction() and localhost (c584434_)
+- Add mise & update tested python versions (e1bfdde_)
+
+.. _c584434: https://github.com/level12/flask-webtest/commit/c584434
+.. _e1bfdde: https://github.com/level12/flask-webtest/commit/e1bfdde
+
+
 0.1.4 released 2023-11-10
 -------------------------
 
